@@ -13,7 +13,7 @@ loadout_is_collected = False
 hitboxx = 40
 player_alive = True
 spaceship_img = "images/spaceship.png"
-loadoutsrn = 0
+loadoutsrn = False
 player1_points = 0
 hitboxy = 30
 green = (0,255,0)
@@ -65,11 +65,18 @@ def update_highscore(player1_points):
         highscore = player1_points
         with open("highscore.txt", "w") as f:
             f.write(str(highscore))
-        
+
+def loadout_rewards():       
+    spaceship_img = "images/spaceship_upg1.png"
+    playerimage = pygame.image.load(spaceship_img).convert_alpha()
+    playercenter = 48
+    cooldown = 325
+    return playerimage,playercenter,cooldown   
+    
 
 class Enemy():
     def __init__(self,img_path,steps,health):
-        self.image = pygame.image.load(img_path)
+        self.image = pygame.image.load(img_path).convert_alpha()
         self.x = random.randint(300,600)    
         self.y = random.randint(30, 100)
         self.steps = steps
@@ -103,7 +110,7 @@ class Enemy():
                         explosion_sound.play()
 class Bullet():
     def __init__(self,playerx,playery):
-        self.image = pygame.image.load("images/bullet.png")
+        self.image = pygame.image.load("images/bullet.png").convert_alpha()
         self.x = playerx+playercenter
         self.y = playery
         self.speed = 7
@@ -132,8 +139,8 @@ highscore_rect = highscore1.get_rect(center=(700,30))
 
 # Load images
 
-background = pygame.image.load("images/backround.jpg")
-#playerimage = pygame.image.load(spaceship_img)
+background = pygame.image.load("images/backround.jpg").convert_alpha()
+playerimage = pygame.image.load(spaceship_img).convert_alpha()
 # Load sounds
 shoot_sound = pygame.mixer.Sound("sounds/shoot.wav")
 explosion_sound = pygame.mixer.Sound("sounds/explosion.wav")
@@ -175,7 +182,7 @@ while True:
 
     screen.blit(highscore1, highscore_rect)
     screen.blit(text2, text2_rect)
-    playerimage = pygame.image.load(spaceship_img)
+
     
 
     # Draw player (needed so it still shows when no keys pressed)
@@ -214,44 +221,39 @@ while True:
                     if boss_spawned == False:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.choice([1,2,3,4,5,6,7,8,9,10])
-                        if lo_spawn == 7:
-                            loadoutsrn += 1
-                            loadout_inbound_sound = False
+                        lo_spawn = random.choice([7])
+                        #makes it 10 percent chance for loadout every time you kill an enemy
+                        if lo_spawn == 7 and loadoutsrn == False:
+                            loadoutsrn = True
+                            loadout_inbound.play() 
+                            loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
     #create loadout
     #collect loadout or not collect
     #multiple loadouts
     #introduce data type dictionary
     #code refact via using function
-    if loadoutsrn == 1:
-        loadout = pygame.image.load("images/loadout.png")
+    if loadoutsrn == True:      
         screen.blit(loadout, (loadoutx, loadouty))
         loadouty += 1 
-        if not loadout_inbound_sound:
-            loadout_inbound.play()
-            loadout_inbound_sound = True
 
-               
-    if loadouty >= 600:  
-        loadoutsrn = 0
-    
-    if (loadoutx < playerx + 50 and 
-        loadoutx + 40 > playerx and
-        loadouty < playery + 53 and  
-        loadouty + 29 > playery):
-        loadout_collected.play() 
-        loadoutsrn = 0 
-        lo_collected += 1  
-        loadoutx =random.randint(0,800)
-        loadouty = 0   
-   
-       
-    if lo_collected == 1:    
-        spaceship_img = "images/spaceship_upg1.png"
-        playercenter = 48
-        cooldown = 325           
-    
+                
+        if loadouty >= 600:  
+            loadoutsrn = False
+            loadoutx =random.randint(0,800)
+            loadouty = 0 
+        
+        if (loadoutx < playerx + 50 and 
+            loadoutx + 40 > playerx and
+            loadouty < playery + 53 and  
+            loadouty + 29 > playery):
+            loadout_collected.play() 
+            loadoutsrn = False 
+            lo_collected += 1  
+            loadoutx =random.randint(0,800)
+            loadouty = 0 
+            if lo_collected == 1:           
+                playerimage,playercenter,cooldown = loadout_rewards()
 
     if enemylist == []:
         if boss_spawned == False: 
