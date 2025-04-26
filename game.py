@@ -71,6 +71,8 @@ def loadout_rewards():
     playerimage = pygame.image.load(spaceship_img).convert_alpha()
     playercenter = 48
     cooldown = 325
+    if lo_collected >= 2:
+        cooldown = 0
     return playerimage,playercenter,cooldown   
     
 
@@ -183,8 +185,6 @@ while True:
     screen.blit(highscore1, highscore_rect)
     screen.blit(text2, text2_rect)
 
-    
-
     # Draw player (needed so it still shows when no keys pressed)
     #screen.blit(playerimage, (playerx, playery))
     for enemy in enemylist:
@@ -228,11 +228,7 @@ while True:
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
-    #create loadout
-    #collect loadout or not collect
-    #multiple loadouts
-    #introduce data type dictionary
-    #code refact via using function
+   
     if loadoutsrn == True:      
         screen.blit(loadout, (loadoutx, loadouty))
         loadouty += 1 
@@ -252,9 +248,9 @@ while True:
             lo_collected += 1  
             loadoutx =random.randint(0,800)
             loadouty = 0 
-            if lo_collected == 1:           
+            if lo_collected >= 1:           
                 playerimage,playercenter,cooldown = loadout_rewards()
-
+       
     if enemylist == []:
         if boss_spawned == False: 
             enemylist.append(Enemy("images/boss.png",15,10))
@@ -265,14 +261,8 @@ while True:
             screen.blit(text1, text1_rect)
             if sound_played == False:
                 sound_played = True
-                update_highscore(player1_points)
-        
+                update_highscore(player1_points)       
                 win_sound.play()
-    # update_highscore(player1_points,highscore)
-    # if player1_points > highscore:
-    #     highscore = player1_points
-    #     with open("highscore.txt", "w") as f:
-    #         f.write(str(highscore))
          
     pygame.display.flip()
     clock.tick(60)
