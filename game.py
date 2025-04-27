@@ -6,6 +6,9 @@ loadoutx = random.randint(0,380)
 loadouty = -30
 playercenter = 24
 lo_collected = 0
+playerstep = 5
+enemyspawns = 2
+enemyimage = "images/enemy_green.png"
 with open("highscore.txt", "r") as f:
     highscore = int(f.read())
 loadout_inbound_sound = False
@@ -28,21 +31,21 @@ sound_played = False
 spawn_delay = 2000  # time in milliseconds between spawns
 last_spawn_time = pygame.time.get_ticks()  # current time
 
-def player_movement(x,y):
+def player_movement(x,y,playerstep):
     # Handle movement on key press inside event loop
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
-        x -= 5 
+        x -= playerstep 
     if keys[pygame.K_RIGHT]:
-        x += 5
+        x += playerstep
     if keys[pygame.K_d]:
-        x += 5
+        x += playerstep
     if keys[pygame.K_s]:
         y += 5
     if keys[pygame.K_w]:
         y += -5
     if keys[pygame.K_a]:
-        x += -5
+        x += -playerstep
     if keys[pygame.K_UP]:
         y += -5
     if keys[pygame.K_DOWN]:
@@ -67,14 +70,20 @@ def update_highscore(player1_points):
         with open("highscore.txt", "w") as f:
             f.write(str(highscore))
 
-def loadout_rewards():       
+def loadout_rewards(playerstep):       
     spaceship_img = "images/spaceship_upg1.png"
     playerimage = pygame.image.load(spaceship_img).convert_alpha()
     playercenter = 48
     cooldown = 325
     if lo_collected >= 2:
+        cooldown = 200
+    if lo_collected == 3:
+        playerstep = 7
+        cooldown = 200
+    if lo_collected >= 4:
+        playerstep = 9
         cooldown = 0
-    return playerimage,playercenter,cooldown   
+    return playerimage,playercenter,cooldown,playerstep  
     
 
 class Enemy():
@@ -90,13 +99,7 @@ class Enemy():
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
     def movement(self):
-        # Moves right when touched left border, moves left when touched right border.
-        # if self.x >= 360:
-        #     self.steps = self.steps*-1
-        #     self.y += random.choice([20,30])
-        # elif self.x  <= 0:
-        #     self.steps = self.steps*-1
-        #     self.y += random.choice([20,30])
+        
         self.y += self.steps 
     def detection(self):
 
@@ -178,11 +181,11 @@ while True:
                     last_shot_time = current_time
 
     if current_time - last_spawn_time > spawn_delay:
-        for i in range(2):
-            enemylist.append(Enemy("images/enemy_green.png", 2,False))
+        for i in range(enemyspawns):
+            enemylist.append(Enemy(enemyimage, 2,False))
         last_spawn_time = current_time
     
-    playerx,playery = player_movement(playerx,playery)
+    playerx,playery = player_movement(playerx,playery,playerstep)
 
     # Draw background
     scroll_y -= 1
@@ -248,7 +251,23 @@ while True:
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
-   
+    # pdb.set_trace()
+    if 100 > player1_points >= 25:
+        enemyspawns = 4
+
+    if 300 > player1_points >= 100:
+        enemyspawns = 10
+        enemyimage = "images/enemy_red.png"
+
+    if 250 > player1_points > 150:
+        spawn_delay = 1000
+
+    if player1_points > 250:
+        spawn_delay = 500
+    
+    if player1_points > 300:
+        enemy_spawns = 15
+
     if loadoutsrn == True:      
         screen.blit(loadout, (loadoutx, loadouty))
         loadouty += 2
@@ -266,8 +285,9 @@ while True:
             lo_collected += 1  
             loadoutx =random.randint(0,380)
             loadouty = -30
-            if lo_collected >= 1:           
-                playerimage,playercenter,cooldown = loadout_rewards()
+            if lo_collected >= 1:  
+                pdb.set_trace
+                playerimage,playercenter,cooldown,playerstep = loadout_rewards(playerstep)
        
     if player1_points >= 10:
         if boss_spawned == False: 
