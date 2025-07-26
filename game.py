@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import pdb
+highscore = 0
 hitboxx = 40
 player_alive = True
 player1_points = 0
@@ -15,6 +16,13 @@ last_shot_time = 0
 cooldown = 400
 boss_spawned = False
 sound_played = False
+
+def update_highscore(player1_points,highscore):
+    if player1_points > highscore:
+        highscore = player1_points
+        with open("highscore.txt", "w") as f:
+            f.write(str(highscore))
+
 class Enemy():
     def __init__(self,img_path,steps,health):
         self.image = pygame.image.load(img_path)
@@ -155,14 +163,10 @@ while True:
             
     if player_alive == False:
         screen.blit(text3, text3_rect)
-
-
-            
-        
+        update_highscore(player1_points,highscore)
+    
     if player_alive == True:
-        screen.blit(playerimage, (playerx, playery))
-            
-            
+        screen.blit(playerimage, (playerx, playery))        
             # Update enemy
     for enemy in enemylist:
         enemy.image_blit(screen)
@@ -182,7 +186,7 @@ while True:
                         explosion_sound.play()
                         player1_points += 1
                 
-                    
+                   
         if bullet.y <0:
              bulletlist.remove(bullet)
     if enemylist == []:
@@ -195,9 +199,15 @@ while True:
             screen.blit(text1, text1_rect)
             if sound_played == False:
                 sound_played = True
+                update_highscore(player1_points,highscore)
         
                 win_sound.play()
-            
+    # update_highscore(player1_points,highscore)
+    # if player1_points > highscore:
+    #     highscore = player1_points
+    #     with open("highscore.txt", "w") as f:
+    #         f.write(str(highscore))
+         
     pygame.display.flip()
     clock.tick(60)
    
