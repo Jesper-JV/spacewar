@@ -2,9 +2,18 @@ import pygame
 import random
 import sys
 import pdb
-highscore = 0
+loadoutx = random.randint(0,800)
+playercenter = 24
+loadouty = 0
+lo_collected = 0
+with open("highscore.txt", "r") as f:
+        highscore = int(f.read())
+loadout_inbound_sound = False
+loadout_is_collected = False
 hitboxx = 40
 player_alive = True
+spaceship_img = "images/spaceship.png"
+loadoutsrn = 0
 player1_points = 0
 hitboxy = 30
 green = (0,255,0)
@@ -17,11 +26,14 @@ cooldown = 400
 boss_spawned = False
 sound_played = False
 
-def update_highscore(player1_points,highscore):
+def update_highscore(player1_points):
+    with open("highscore.txt", "r") as f:
+        highscore = int(f.read())
     if player1_points > highscore:
         highscore = player1_points
         with open("highscore.txt", "w") as f:
             f.write(str(highscore))
+        
 
 class Enemy():
     def __init__(self,img_path,steps,health):
@@ -31,7 +43,7 @@ class Enemy():
         self.steps = steps
         self.enemyhealth = health
         steps = random.choice([-4,-3,-2,-1,1,2,3,4,])
-        health = 2
+        health = 3
         
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
@@ -60,7 +72,7 @@ class Enemy():
 class Bullet():
     def __init__(self,playerx,playery):
         self.image = pygame.image.load("images/bullet.png")
-        self.x = playerx+24
+        self.x = playerx+playercenter
         self.y = playery
         self.speed = 7
     def image_blit(self,screen):
@@ -75,21 +87,27 @@ clock = pygame.time.Clock()
 font1 = pygame.font.Font('freesansbold.ttf', 100)
 font2 = pygame.font.Font('freesansbold.ttf', 30)
 font3 = pygame.font.Font('freesansbold.ttf', 80)
+highscore1 = pygame.font.Font('freesansbold.ttf', 30)
 text1= font1.render('YOU WIN', True,green)
 text3= font3.render('WARZONE DEFEAT', True,red)
+highscore1 = highscore1.render('highscore: ' + str(highscore), True,white)
 
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
+highscore_rect = highscore1.get_rect(center=(700,30))
 
 
 
 # Load images
+
 background = pygame.image.load("images/backround.jpg")
-playerimage = pygame.image.load("images/spaceship.png")
+#playerimage = pygame.image.load(spaceship_img)
 # Load sounds
 shoot_sound = pygame.mixer.Sound("sounds/shoot.wav")
 explosion_sound = pygame.mixer.Sound("sounds/explosion.wav")
 win_sound = pygame.mixer.Sound("sounds/win_sound.wav")
+loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
+loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 # Initial positions
 playerx = 380
 playery = 450
@@ -148,22 +166,23 @@ while True:
     text2 = font2.render("points: " + str(player1_points),True,white)
     text2_rect = text2.get_rect(center=(70,30))
 
-    
+    screen.blit(highscore1, highscore_rect)
     screen.blit(text2, text2_rect)
+    playerimage = pygame.image.load(spaceship_img)
     
 
     # Draw player (needed so it still shows when no keys pressed)
     #screen.blit(playerimage, (playerx, playery))
     for enemy in enemylist:
-        if (enemy.x < playerx + 50 and  # enemy's left is left of player's right
-            enemy.x + 40 > playerx and  # enemy's right is right of player's left
-            enemy.y < playery + 53 and  # enemy's top is above player's bottom
-            enemy.y + 29 > playery):    # enemy's bottom is below player's top
+        if (enemy.x < playerx + 50 and
+            enemy.x + 40 > playerx and  
+            enemy.y < playery + 53 and  
+            enemy.y + 29 > playery):    
             player_alive = False
             
     if player_alive == False:
         screen.blit(text3, text3_rect)
-        update_highscore(player1_points,highscore)
+        update_highscore(player1_points)
     
     if player_alive == True:
         screen.blit(playerimage, (playerx, playery))        
@@ -175,6 +194,9 @@ while True:
     for bullet in bulletlist:
         bullet.image_blit(screen)
         bullet.movement()
+        if bullet.y <0:
+            bulletlist.remove(bullet)
+            continue
         for enemy in enemylist:
         #add bullet detection here
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
@@ -185,13 +207,48 @@ while True:
                     if boss_spawned == False:
                         explosion_sound.play()
                         player1_points += 1
-                
-                   
-        if bullet.y <0:
-             bulletlist.remove(bullet)
+                        lo_spawn = random.choice([1,2,3,4,5,6,7,8,9,10])
+                        if lo_spawn == 7:
+                            loadoutsrn += 1
+                            loadout_inbound_sound = False
+                break
+    #create loadout
+    #collect loadout or not collect
+    #multiple loadouts
+    #introduce data type dictionary
+    #code refact via using function
+    if loadoutsrn == 1:
+        loadout = pygame.image.load("images/loadout.png")
+        screen.blit(loadout, (loadoutx, loadouty))
+        loadouty += 1 
+        if not loadout_inbound_sound:
+            loadout_inbound.play()
+            loadout_inbound_sound = True
+
+               
+    if loadouty >= 600:  
+        loadoutsrn = 0
+    
+    if (loadoutx < playerx + 50 and 
+        loadoutx + 40 > playerx and
+        loadouty < playery + 53 and  
+        loadouty + 29 > playery):
+        loadout_collected.play() 
+        loadoutsrn = 0 
+        lo_collected += 1  
+        loadoutx =random.randint(0,800)
+        loadouty = 0   
+   
+       
+    if lo_collected == 1:    
+        spaceship_img = "images/spaceship_upg1.png"
+        playercenter = 48
+        cooldown = 325           
+    
+
     if enemylist == []:
         if boss_spawned == False: 
-            enemylist.append(Enemy("images/boss.png",2,2))
+            enemylist.append(Enemy("images/boss.png",15,10))
             boss_spawned = True
             hitboxx = 70
             hitboxy = 102
@@ -199,7 +256,7 @@ while True:
             screen.blit(text1, text1_rect)
             if sound_played == False:
                 sound_played = True
-                update_highscore(player1_points,highscore)
+                update_highscore(player1_points)
         
                 win_sound.play()
     # update_highscore(player1_points,highscore)
