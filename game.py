@@ -25,6 +25,38 @@ last_shot_time = 0
 cooldown = 400
 boss_spawned = False
 sound_played = False
+def player_movement(x,y):
+    # Handle movement on key press inside event loop
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        x -= 5 
+    if keys[pygame.K_RIGHT]:
+        x += 5
+    if keys[pygame.K_d]:
+        x += 5
+    if keys[pygame.K_s]:
+        y += 5
+    if keys[pygame.K_w]:
+        y += -5
+    if keys[pygame.K_a]:
+        x += -5
+    if keys[pygame.K_UP]:
+        y += -5
+    if keys[pygame.K_DOWN]:
+        y += 5
+
+
+    
+    # Boundary checks
+    if x > 750:
+        x = 750
+    if x < 0:
+        x = 0
+    if y > 550:
+        y = 550
+    if y < 400:
+        y = 400
+    return x,y
 
 def update_highscore(player1_points):
     with open("highscore.txt", "r") as f:
@@ -133,34 +165,9 @@ while True:
                     bulletlist.append(bullet)
                     shoot_sound.play()
                     last_shot_time = current_time
-    # Handle movement on key press inside event loop
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        playerx -= 5 
-    if keys[pygame.K_RIGHT]:
-        playerx += 5
-    if keys[pygame.K_d]:
-        playerx += 5
-    if keys[pygame.K_s]:
-        playery += 5
-    if keys[pygame.K_w]:
-        playery += -5
-    if keys[pygame.K_a]:
-        playerx += -5
-    if keys[pygame.K_UP]:
-        playery += -5
-    if keys[pygame.K_DOWN]:
-        playery += 5
     
-    # Boundary checks
-    if playerx > 750:
-        playerx = 750
-    if playerx < 0:
-        playerx = 0
-    if playery > 550:
-        playery = 550
-    if playery < 400:
-        playery = 400
+    playerx,playery = player_movement(playerx,playery)
+
     # Draw background
     screen.blit(background, (0, 0))
     text2 = font2.render("points: " + str(player1_points),True,white)
