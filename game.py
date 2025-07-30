@@ -7,7 +7,7 @@ playercenter = 24
 loadouty = 0
 lo_collected = 0
 with open("highscore.txt", "r") as f:
-        highscore = int(f.read())
+    highscore = int(f.read())
 loadout_inbound_sound = False
 loadout_is_collected = False
 hitboxx = 40
@@ -19,12 +19,15 @@ hitboxy = 30
 green = (0,255,0)
 white = (255,255,255)
 red = (255,0,0)
-x = 800
-y = 600
+x = 400
+y = 700
 last_shot_time = 0
 cooldown = 400
 boss_spawned = False
 sound_played = False
+spawn_delay = 2000  # time in milliseconds between spawns
+last_spawn_time = pygame.time.get_ticks()  # current time
+
 def player_movement(x,y):
     # Handle movement on key press inside event loop
     keys = pygame.key.get_pressed()
@@ -45,17 +48,15 @@ def player_movement(x,y):
     if keys[pygame.K_DOWN]:
         y += 5
 
-
-    
     # Boundary checks
-    if x > 750:
-        x = 750
+    if x > 350:
+        x = 350
     if x < 0:
         x = 0
-    if y > 550:
-        y = 550
-    if y < 400:
-        y = 400
+    if y > 650:
+        y = 650
+    if y < 100:
+        y = 100
     return x,y
 
 def update_highscore(player1_points):
@@ -77,26 +78,25 @@ def loadout_rewards():
     
 
 class Enemy():
-    def __init__(self,img_path,steps,health):
+    def __init__(self,img_path,health):
         self.image = pygame.image.load(img_path).convert_alpha()
-        self.x = random.randint(300,600)    
-        self.y = random.randint(30, 100)
-        self.steps = steps
+        self.x = random.randint(20,380)    
+        self.y = random.randint(-2,0)
+        self.steps = random.choice([2,2.2,2.3])
         self.enemyhealth = health
-        steps = random.choice([-4,-3,-2,-1,1,2,3,4,])
         health = 3
         
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
     def movement(self):
         # Moves right when touched left border, moves left when touched right border.
-        if self.x >= 760:
-            self.steps = self.steps*-1
-            self.y += random.choice([20,30])
-        elif self.x  <= 0:
-            self.steps = self.steps*-1
-            self.y += random.choice([20,30])
-        self.x += self.steps 
+        # if self.x >= 360:
+        #     self.steps = self.steps*-1
+        #     self.y += random.choice([20,30])
+        # elif self.x  <= 0:
+        #     self.steps = self.steps*-1
+        #     self.y += random.choice([20,30])
+        self.y += self.steps 
     def detection(self):
 
         for bullet in bulletlist:
@@ -125,24 +125,25 @@ pygame.init()
 screen = pygame.display.set_mode((x, y))
 pygame.display.set_caption("SPACEWAR VER 1.0.0")
 clock = pygame.time.Clock()
-font1 = pygame.font.Font('freesansbold.ttf', 100)
-font2 = pygame.font.Font('freesansbold.ttf', 30)
-font3 = pygame.font.Font('freesansbold.ttf', 80)
-highscore1 = pygame.font.Font('freesansbold.ttf', 30)
+font1 = pygame.font.Font('freesansbold.ttf', 50)
+font2 = pygame.font.Font('freesansbold.ttf', 20)
+font3 = pygame.font.Font('freesansbold.ttf', 40)
+highscore1 = pygame.font.Font('freesansbold.ttf', 20)
 text1= font1.render('YOU WIN', True,green)
 text3= font3.render('WARZONE DEFEAT', True,red)
 highscore1 = highscore1.render('highscore: ' + str(highscore), True,white)
 
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
-highscore_rect = highscore1.get_rect(center=(700,30))
-
-
+highscore_rect = highscore1.get_rect(center=(330,30))
 
 # Load images
 
-background = pygame.image.load("images/backround.jpg").convert_alpha()
+background = pygame.image.load("images/bg.jpg").convert()
+bg_height = background.get_height()
+scroll_y = 0
 playerimage = pygame.image.load(spaceship_img).convert_alpha()
+
 # Load sounds
 shoot_sound = pygame.mixer.Sound("sounds/shoot.wav")
 explosion_sound = pygame.mixer.Sound("sounds/explosion.wav")
@@ -150,13 +151,13 @@ win_sound = pygame.mixer.Sound("sounds/win_sound.wav")
 loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
 loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 # Initial positions
-playerx = 380
-playery = 450
+playerx = x // 2
+playery = y - (y // 4)
 bulletlist = []
 enemylist = []
 playerx += 5
-for i in range(10):
-    enemylist.append(Enemy("images/enemy_green.png",random.choice([-4,-3,-2,-1,1,2,3,4,]),2))
+for i in range(2):
+    enemylist.append(Enemy("images/enemy_green.png",2))
 
 while True:
     
@@ -174,13 +175,23 @@ while True:
                     bulletlist.append(bullet)
                     shoot_sound.play()
                     last_shot_time = current_time
+
+    if current_time - last_spawn_time > spawn_delay:
+        for i in range(2):
+            enemylist.append(Enemy("images/enemy_green.png", 2))
+        last_spawn_time = current_time
     
     playerx,playery = player_movement(playerx,playery)
 
     # Draw background
-    screen.blit(background, (0, 0))
+    scroll_y -= 1
+    if scroll_y <= 0:
+        scroll_y = bg_height
+    screen.blit(background, (0, - scroll_y))
+    screen.blit(background,(0,bg_height - scroll_y))
+    
     text2 = font2.render("points: " + str(player1_points),True,white)
-    text2_rect = text2.get_rect(center=(70,30))
+    text2_rect = text2.get_rect(center=(50,30))
 
     screen.blit(highscore1, highscore_rect)
     screen.blit(text2, text2_rect)
@@ -231,12 +242,12 @@ while True:
    
     if loadoutsrn == True:      
         screen.blit(loadout, (loadoutx, loadouty))
-        loadouty += 1 
+        loadouty += 2
 
                 
-        if loadouty >= 600:  
+        if loadouty >= 700:  
             loadoutsrn = False
-            loadoutx =random.randint(0,800)
+            loadoutx =random.randint(0,350)
             loadouty = 0 
         
         if (loadoutx < playerx + 50 and 
@@ -246,14 +257,14 @@ while True:
             loadout_collected.play() 
             loadoutsrn = False 
             lo_collected += 1  
-            loadoutx =random.randint(0,800)
+            loadoutx =random.randint(0,350)
             loadouty = 0 
             if lo_collected >= 1:           
                 playerimage,playercenter,cooldown = loadout_rewards()
        
-    if enemylist == []:
+    if player1_points >= 10:
         if boss_spawned == False: 
-            enemylist.append(Enemy("images/boss.png",15,10))
+            enemylist.append(Enemy("images/boss.png",10))
             boss_spawned = True
             hitboxx = 70
             hitboxy = 102
