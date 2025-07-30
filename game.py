@@ -2,16 +2,16 @@ import pygame
 import random
 import sys
 import pdb
-loadoutx = random.randint(0,800)
+loadoutx = random.randint(0,380)
+loadouty = -30
 playercenter = 24
-loadouty = 0
 lo_collected = 0
 with open("highscore.txt", "r") as f:
     highscore = int(f.read())
 loadout_inbound_sound = False
 loadout_is_collected = False
 hitboxx = 40
-player_alive = True
+game_status = "ongoing"
 spaceship_img = "images/spaceship.png"
 loadoutsrn = False
 player1_points = 0
@@ -78,13 +78,14 @@ def loadout_rewards():
     
 
 class Enemy():
-    def __init__(self,img_path,health):
+    def __init__(self,img_path,health,boss):
         self.image = pygame.image.load(img_path).convert_alpha()
         self.x = random.randint(20,380)    
         self.y = random.randint(-2,0)
-        self.steps = random.choice([2,2.2,2.3])
+        self.steps = random.choice([2,2.2,2.3,2.4,2.5])
         self.enemyhealth = health
         health = 3
+        self.boss = boss
         
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
@@ -157,7 +158,7 @@ bulletlist = []
 enemylist = []
 playerx += 5
 for i in range(2):
-    enemylist.append(Enemy("images/enemy_green.png",2))
+    enemylist.append(Enemy("images/enemy_green.png",2,False))
 
 while True:
     
@@ -178,7 +179,7 @@ while True:
 
     if current_time - last_spawn_time > spawn_delay:
         for i in range(2):
-            enemylist.append(Enemy("images/enemy_green.png", 2))
+            enemylist.append(Enemy("images/enemy_green.png", 2,False))
         last_spawn_time = current_time
     
     playerx,playery = player_movement(playerx,playery)
@@ -203,15 +204,18 @@ while True:
             enemy.x + 40 > playerx and  
             enemy.y < playery + 53 and  
             enemy.y + 29 > playery):    
-            player_alive = False
+            game_status = "loss"
+            update_highscore(player1_points)
             
-    if player_alive == False:
+    if game_status == "loss":
         screen.blit(text3, text3_rect)
-        update_highscore(player1_points)
     
-    if player_alive == True:
+    if game_status == "ongoing":
         screen.blit(playerimage, (playerx, playery))        
-            # Update enemy
+
+    if game_status == "win":
+        screen.blit(text1, text1_rect)
+    # Update enemy
     for enemy in enemylist:
         enemy.image_blit(screen)
         enemy.movement()
@@ -229,7 +233,12 @@ while True:
                 enemy.enemyhealth -= 1
                 if enemy.enemyhealth == 0:
                     enemylist.remove(enemy)
-                    if boss_spawned == False:
+                    if enemy.boss == True:
+                        player1_points += 3
+                        update_highscore(player1_points)       
+                        win_sound.play()
+                        game_status = "win"                        
+                    else:
                         explosion_sound.play()
                         player1_points += 1
                         lo_spawn = random.choice([7])
@@ -243,12 +252,10 @@ while True:
     if loadoutsrn == True:      
         screen.blit(loadout, (loadoutx, loadouty))
         loadouty += 2
-
-                
         if loadouty >= 700:  
             loadoutsrn = False
-            loadoutx =random.randint(0,350)
-            loadouty = 0 
+            loadoutx =random.randint(0,380)
+            loadouty = -30
         
         if (loadoutx < playerx + 50 and 
             loadoutx + 40 > playerx and
@@ -257,24 +264,19 @@ while True:
             loadout_collected.play() 
             loadoutsrn = False 
             lo_collected += 1  
-            loadoutx =random.randint(0,350)
-            loadouty = 0 
+            loadoutx =random.randint(0,380)
+            loadouty = -30
             if lo_collected >= 1:           
                 playerimage,playercenter,cooldown = loadout_rewards()
        
     if player1_points >= 10:
         if boss_spawned == False: 
-            enemylist.append(Enemy("images/boss.png",10))
+            enemylist.append(Enemy("images/boss.png",5,True))
             boss_spawned = True
             hitboxx = 70
             hitboxy = 102
-        else:
-            screen.blit(text1, text1_rect)
-            if sound_played == False:
-                sound_played = True
-                update_highscore(player1_points)       
-                win_sound.play()
-         
+
+             
     pygame.display.flip()
     clock.tick(60)
    
