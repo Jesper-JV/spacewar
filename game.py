@@ -16,6 +16,7 @@ with open("highscore.txt", "r") as f:
     highscore = int(f.read())
 loadout_inbound_sound = False
 loadout_is_collected = False
+active = False
 hitboxx = 40 
 game_status = "ongoing" 
 spaceship_img = "images/spaceship.png" # player image
@@ -64,7 +65,7 @@ def player_movement(x,y,playerstep):
     if y < 100:
         y = 100
     return x,y
-
+# Function to save highscore
 def update_highscore(player1_points):
     with open("highscore.txt", "r") as f:
         highscore = int(f.read())
@@ -72,7 +73,9 @@ def update_highscore(player1_points):
         highscore = player1_points
         with open("highscore.txt", "w") as f:
             f.write(str(highscore))
-
+        username = input("what is your name? ")
+        print(username)
+# Function to give you rewards after you take loadout
 def loadout_rewards(playerstep):       
     spaceship_img = "images/spaceship_upg1.png"
     playerimage = pygame.image.load(spaceship_img).convert_alpha()
@@ -91,7 +94,7 @@ def loadout_rewards(playerstep):
         cooldown = 0
     return playerimage,playercenter,cooldown,playerstep  
     
-
+# Enemy class, makes it possible to have multiple enemies.
 class Enemy():
     def __init__(self,img_path,health,boss):
         self.image = pygame.image.load(img_path).convert_alpha()
@@ -101,35 +104,37 @@ class Enemy():
         self.enemyhealth = health
         health = 3
         self.boss = boss
-        
+    # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
     def movement(self):
         
         self.y += self.steps
 
-
+    # Enemy loses one health every time it gets hit by a bullet
     def detection(self):
 
         for bullet in bulletlist:
             bullet.image_blit(screen)
             bullet.movement()
             for enemy in enemylist:
-        #add bullet detection here
                 if enemy.x <= bullet.x <= enemy.x+40 and enemy.y <= bullet.y <= enemy.y+30:
                     bulletlist.remove(bullet)
                     enemy.enemyhealth -= 1
                     if enemy.enemyhealth == 0:
                         enemylist.remove(enemy)
                         explosion_sound.play()
+# Makes it possible to have multiple bullets at the same time                       
 class Bullet():
     def __init__(self,playerx,playery):
         self.image = pygame.image.load("images/bullet.png").convert_alpha()
         self.x = playerx+playercenter
         self.y = playery
         self.speed = 7
+
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
+
     def movement(self):
         self.y -= self.speed
 
@@ -147,27 +152,26 @@ font3 = pygame.font.Font('freesansbold.ttf', 40)
 playerhealth1 = pygame.font.Font('freesansbold.ttf', 20)
 highscore1 = pygame.font.Font('freesansbold.ttf', 20)
 waves_passed = pygame.font.Font('freesansbold.ttf', 20)
+# Color for input box
+color_active = pygame.Color('lightskyblue3')
+color_passive = pygame.Color('chartreuse4')
+color = color_passive
 # Text and color for text
 text1= font1.render('YOU WIN', True,green)
 text3= font3.render('WARZONE DEFEAT', True,red)
-
 highscore1 = highscore1.render('Highscore: ' + str(highscore), True,white)
-
-
 # Set center for text
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
 highscore_rect = highscore1.get_rect(center=(310,30))
-
 # Load images
-
 background = pygame.image.load("images/bg.jpg").convert()
 bg_height = background.get_height()
 scroll_y = 0
 playerimage = pygame.image.load(spaceship_img).convert_alpha()
-
 # Load sounds
 shoot_sound = pygame.mixer.Sound("sounds/shoot.wav")
+lose_sound = pygame.mixer.Sound("sounds/lose_sound.wav")
 explosion_sound = pygame.mixer.Sound("sounds/explosion.wav")
 win_sound = pygame.mixer.Sound("sounds/win_sound.wav")
 loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
@@ -175,17 +179,16 @@ loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
+# Lists
 bulletlist = []
 enemylist = []
 
-for i in range(2):
-    enemylist.append(Enemy("images/enemy_green.png",2,False))
-
+# Main loop
 while True:
-    
+    # Cooldown and track if window is closed
     current_time = pygame.time.get_ticks()
     for event in pygame.event.get():
-        print(pygame.event.event_name(event.type))
+        # print(pygame.event.event_name(event.type))
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
@@ -197,10 +200,10 @@ while True:
                     bulletlist.append(bullet)
                     shoot_sound.play()
                     last_shot_time = current_time
-
+    # Appends enemys every two seconds
     if current_time - last_spawn_time > spawn_delay:
         for i in range(enemyspawns):
-            enemylist.append(Enemy(enemyimage, enemyhealth,False))
+            enemylist.append(Enemy(enemyimage, enemyhealth,False)) 
         last_spawn_time = current_time
         current_wave += 1
     
@@ -217,17 +220,16 @@ while True:
     playerhealth1_text = playerhealth1.render( "Health: "+ str(playerhealth), True,white)
     text2_rect = text2.get_rect(center=(50,30))
     playerhealth1_text_rect = playerhealth1_text.get_rect(center=(50,80))
-    waves_passed_text = waves_passed.render('Current wave: ' + str(current_wave), True,white)
-      
+    waves_passed_text = waves_passed.render('Current wave: ' + str(current_wave), True,white) 
     waves_passed_text_rect = waves_passed_text.get_rect(center=(82,130))
-
+    # Blits text
     screen.blit(waves_passed_text, waves_passed_text_rect)
     screen.blit(highscore1, highscore_rect)
     screen.blit(text2, text2_rect)
     screen.blit(playerhealth1_text, playerhealth1_text_rect)
     
 
-    # Draw player (needed so it still shows when no keys pressed)
+    
     #screen.blit(playerimage, (playerx, playery))
     for enemy in enemylist:
         if (enemy.x < playerx + 50 and
@@ -240,23 +242,28 @@ while True:
     if playerhealth == 0:
         game_status = "loss"
         update_highscore(player1_points)
+        lose_sound.play()
+        playerhealth -= 1
 
     if game_status == "loss":
+        # Shows "WARZONE DEFEAT" text
         screen.blit(text3, text3_rect)
     
     if game_status == "ongoing":
+        # Draw player (needed so it still shows when no keys pressed)
         screen.blit(playerimage, (playerx, playery))        
 
     if game_status == "win":
+        # Refreshes "YOU WIN" text
         screen.blit(text1, text1_rect)
+
     # Update enemy
     for enemy in enemylist:
         enemy.image_blit(screen)
         enemy.movement()
         if enemy.y > 700:
-            enemylist.remove(enemy)
-            
-        
+            enemylist.remove(enemy)           
+    # Deletes bullet after it is out of screen    
     for bullet in bulletlist:
         bullet.image_blit(screen)
         bullet.movement()
@@ -264,13 +271,14 @@ while True:
             bulletlist.remove(bullet)
             continue
         for enemy in enemylist:
-        #add bullet detection here
+        # Bullet detection
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
                 bulletlist.remove(bullet)
                 enemy.enemyhealth -= 1
                 if enemy.enemyhealth == 0:
                     enemylist.remove(enemy)
                     if enemy.boss == True:
+                        # Gives extra points if you kill the boss
                         player1_points += 3
                         update_highscore(player1_points)       
                         win_sound.play()
@@ -279,44 +287,52 @@ while True:
                         explosion_sound.play()
                         player1_points += 1
                         lo_spawn = random.choice([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])
-                        #makes it 10 percent chance for loadout every time you kill an enemy
+                        #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and loadoutsrn == False:
                             loadoutsrn = True
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
-
+    # Difficulties depending on the players points
     if 100 > player1_points >= 25:
         enemyspawns = 3
         
-
     if 150 > player1_points >= 100:
         enemyspawns = 5
-        enemyimage = "images/enemy_red.png"
+        
 
     if 250 > player1_points > 150:
-        spawn_delay = 1500
-        enemyspawns = 8
+        spawn_delay = 1750
+        enemyspawns = 6
+        enemyimage = "images/enemy_red.png"
 
     if 500 > player1_points > 250:
-        spawn_delay = 1000
+        spawn_delay = 1500
+        enemyspawns = 8
     
     if 750 > player1_points >= 300:
         enemyspawns = 10
         enemyimage = "images/red_final .png"
 
-    if player1_points > 500:
+    if 1000 > player1_points > 500:
         enemyhealth = 3
+        spawn_delay = 1000
+
+    if player1_points >= 1000:
+        enemyspawns = 15
         spawn_delay = 500
 
+
+    # Spawns loadout
     if loadoutsrn == True:      
         screen.blit(loadout, (loadoutx, loadouty))
         loadouty += 2
+        # Detects if the loadout is out of screen
         if loadouty >= 700:  
             loadoutsrn = False
             loadoutx =random.randint(0,380)
             loadouty = -30
-        
+        # Detects if player have touched the loadout
         if (loadoutx < playerx + 50 and 
             loadoutx + 40 > playerx and
             loadouty < playery + 53 and  
@@ -329,15 +345,17 @@ while True:
             loadouty = -30
             if lo_collected >= 1:  
                 playerimage,playercenter,cooldown,playerstep = loadout_rewards(playerstep)
-       
-    if player1_points >= 10:
+                # Gives player more health if loadout collected is more than 5
+                if lo_collected >= 5:
+                    playerhealth += 1
+
+    if player1_points == 10:
         if boss_spawned == False: 
             enemylist.append(Enemy("images/boss.png",5,True))
             boss_spawned = True
             hitboxx = 70
             hitboxy = 102
-
-             
+         
     pygame.display.flip()
     clock.tick(60)
    
