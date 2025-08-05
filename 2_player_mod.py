@@ -9,9 +9,13 @@ lo_collected = 0
 playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
-playerhealth = 3
+playerhealth = 10000
 current_wave = 1
-playerhealth2 = 3
+big_bullet_speed = 2
+final_boss_spawned = False
+final_boss_killed = False
+playerhealth2 = 5
+bosses_killed = 0
 enemyimage = "images/enemy_green.png"
 with open("highscore.txt", "r") as f:
     highscore = int(f.read())
@@ -20,7 +24,7 @@ loadout_is_collected = False
 active = False
 hitboxx = 40 
 game_status = "ongoing" 
-spaceship_img = "images/panda.webp" # player image
+spaceship_img = "images/spaceship.png" # player image
 spaceship_img2 = "images/spaceship2.png"
 loadoutsrn = False # makes it only one loadout on the screen
 player1_points = 0 # amount of enemys player1 has destroyed
@@ -93,34 +97,40 @@ def update_highscore(player1_points):
         username = input("what is your name? ")
         print(username)
 # Function to give you rewards after you take loadout
-def loadout_rewards(playerstep):       
-    spaceship_img = "images/panda.webp"
+def loadout_rewards(playerstep,big_bullet_speed):       
+    spaceship_img = "images/spaceship_upg1.png"
     playerimage = pygame.image.load(spaceship_img).convert_alpha()
     playercenter = 48
     cooldown = 325
+    big_bullet_speed += 1
     if lo_collected >= 2:
         cooldown = 200
+        big_bullet_speed += 1
     if lo_collected == 3:
         playerstep = 7
         cooldown = 200
+
     if 5 > lo_collected >= 4:
         playerstep = 9
         cooldown = 0
+    
     if lo_collected >= 5:
         playerstep = 10
         cooldown = 0
-    return playerimage,playercenter,cooldown,playerstep  
+        
+    return playerimage,playercenter,cooldown,playerstep,big_bullet_speed  
     
 # Enemy class, makes it possible to have multiple enemies.
 class Enemy():
-    def __init__(self,img_path,health,boss):
+    def __init__(self,img_path,health,boss,steps,finalboss):
         self.image = pygame.image.load(img_path).convert_alpha()
         self.x = random.randint(20,380)    
         self.y = random.randint(-2,0)
-        self.steps = random.choice([2,2.2,2.3,2.4,2.5])
+        self.steps = steps
         self.enemyhealth = health
         health = 3
         self.boss = boss
+        self.finalboss = finalboss
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
@@ -167,9 +177,9 @@ class Bullet():
         self.y -= self.speed
 
 class Big_bullet():
-    def __init__(self,playerx2,playery2):
-        self.image = pygame.image.load("images/big_bullet1.png").convert_alpha()
-        self.speed = 5
+    def __init__(self,playerx2,playery2,big_bullet_speed):
+        self.image = pygame.image.load("images/missile.png").convert_alpha()
+        self.speed = big_bullet_speed
         self.x = playerx2+10
         self.y = playery2
       
@@ -254,14 +264,14 @@ while True:
             if current_time - last_shot_time2 >= cooldown2:
 
                 if event.key == pygame.K_e:
-                    big_bullet = Big_bullet(playerx2,playery2)
+                    big_bullet = Big_bullet(playerx2,playery2,big_bullet_speed)
                     big_bulletlist.append(big_bullet)
                     shoot_sound.play()
                     last_shot_time2 = current_time
     # Appends enemys every two seconds
     if current_time - last_spawn_time > spawn_delay:
         for i in range(enemyspawns):
-            enemylist.append(Enemy(enemyimage, enemyhealth,False)) 
+            enemylist.append(Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False)) 
         last_spawn_time = current_time
         current_wave += 1
     
@@ -300,14 +310,17 @@ while True:
             enemy.y < playery + 53 and  
             enemy.y + 29 > playery):  
             playerhealth -= 1
-            enemylist.remove(enemy) 
+            if enemy.boss == False and enemy.finalboss == False:
+                enemylist.remove(enemy)
+           
     for enemy in enemylist:
         if (enemy.x < playerx2 + 50 and
             enemy.x + 40 > playerx2 and  
             enemy.y < playery2 + 53 and  
             enemy.y + 29 > playery2):  
             playerhealth2 -= 1
-            enemylist.remove(enemy) 
+            if enemy.boss == False and enemy.finalboss == False:
+                enemylist.remove(enemy)
             
     if playerhealth == 0 or playerhealth2 == 0:
         game_status = "loss"
@@ -337,22 +350,7 @@ while True:
         if enemy.y > 700:
             enemylist.remove(enemy)           
     # Deletes bullet after it is out of screen   
-    for big_bullet in big_bulletlist:
-        big_bullet.image_blit(screen)
-        big_bullet.movement()
-        if big_bullet.y <0:
-            big_bulletlist.remove(big_bullet)
-            continue
-        for enemy in enemylist:
-                if enemy.x-100 <= big_bullet.x <= enemy.x+150 and enemy.y <= big_bullet.y <= enemy.y+30:
-                    big_bulletlist.remove(big_bullet)
-                    enemy.enemyhealth -= 5
-                
-                    if enemy.enemyhealth <= 0:
-                        enemylist.remove(enemy)
-                        explosion_sound.play() 
-                        player1_points += 1  
-                    break 
+  
     for bullet in bulletlist:
         bullet.image_blit(screen)
         bullet.movement()
@@ -360,18 +358,30 @@ while True:
             bulletlist.remove(bullet)
             continue
         for enemy in enemylist:
-        # Bullet detection
+            if enemy.finalboss == False:
+                hitboxx = 40
+                hitboxy = 40
+            else:
+                hitboxx = 200
+                hitboxy =432
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
+                print(f"{enemy.boss=}")
                 bulletlist.remove(bullet)
                 enemy.enemyhealth -= 1
-                if enemy.enemyhealth == 0:
+                if enemy.enemyhealth <= 0:
                     enemylist.remove(enemy)
-                    if enemy.boss == True:
-                        # Gives extra points if you kill the boss
-                        player1_points += 3
-                        update_highscore(player1_points)       
-                        win_sound.play()
-                        game_status = "win"                        
+         
+          
+                   
+                          
+                    if enemy.finalboss == True:
+                        game_status = "win"
+                        player1_points += 100
+                        update_highscore(player1_points)
+                        win_sound.play() 
+                        final_boss_killed = True 
+                        hitboxx = 200
+                        hitboxy = 432                    
                     else:
                         explosion_sound.play()
                         player1_points += 1
@@ -382,6 +392,62 @@ while True:
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
+    for big_bullet in big_bulletlist:
+        big_bullet.image_blit(screen)
+        big_bullet.movement()
+        if big_bullet.y <0:
+            big_bulletlist.remove(bullet)
+            continue
+        for enemy in enemylist:
+            if enemy.finalboss == False:
+                hitboxx = 40
+                hitboxy = 40
+            else:
+                hitboxx = 200
+                hitboxy =432    
+        # Bullet detection
+            if enemy.x <= big_bullet.x <= enemy.x+hitboxx and enemy.y <= big_bullet.y <= enemy.y+hitboxy:
+                big_bulletlist.remove(big_bullet)
+                enemy.enemyhealth -= 10
+                if enemy.enemyhealth <= 0:
+                    enemylist.remove(enemy)         
+                    if enemy.finalboss == True:
+                        game_status = "win"
+                        player1_points += 100
+                        update_highscore(player1_points)
+                        win_sound.play() 
+                        final_boss_killed = True 
+                        hitboxx = 200
+                        hitboxy = 432                   
+                    else:
+                        explosion_sound.play()
+                        player1_points += 1
+                        lo_spawn = random.randint(1,15)
+                        #makes it a chance for loadout every time you kill an enemy
+                        if lo_spawn == 7 and loadoutsrn == False:
+                            loadoutsrn = True
+                            loadout_inbound.play() 
+                            loadout = pygame.image.load("images/loadout.png").convert_alpha()
+                break
+    if player1_points > 1 and not final_boss_spawned:
+        enemylist.append(Enemy("images/Final_boss.png",50,False,0.2,True))
+        hitboxx = 90
+        hitboxy = 200
+        for enemy in enemylist:
+            if enemy.finalboss == True:
+                enemy.x = 150
+                enemy.y = -200
+                hitboxx = 90
+                hitboxy = 200
+                current_wave += 1
+                final_boss_spawned = True
+            elif enemy.finalboss == False:
+                hitboxx = 40
+                hitboxy = 40
+
+    if final_boss_killed == True:
+        game_status = "win"
+        
     # Difficulties depending on the players points
     if 100 > player1_points >= 25:
         enemyspawns = 3
@@ -433,7 +499,7 @@ while True:
             loadoutx =random.randint(0,380)
             loadouty = -30
             if lo_collected >= 1:  
-                playerimage,playercenter,cooldown,playerstep = loadout_rewards(playerstep)
+                playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
                 # Gives player more health if loadout collected is more than 5
                 if lo_collected >= 5:
                     playerhealth += 1
@@ -449,17 +515,15 @@ while True:
             loadoutx =random.randint(0,380)
             loadouty = -30
             if lo_collected >= 1:  
-                playerimage,playercenter,cooldown,playerstep = loadout_rewards(playerstep)
+                playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
                 # Gives player more health if loadout collected is more than 5
                 if lo_collected >= 5:
                     playerhealth2 += 1
 
-    if player1_points == 10:
-        if boss_spawned == False: 
-            enemylist.append(Enemy("images/boss.png",5,True))
-            boss_spawned = True
-            hitboxx = 70
-            hitboxy = 102
+    
+  
+
+
          
     pygame.display.flip()
     clock.tick(60)
