@@ -9,8 +9,9 @@ lo_collected = 0
 playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
-playerhealth = 10000
+playerhealth = 3
 current_wave = 1
+
 big_bullet_speed = 2
 final_boss_spawned = False
 final_boss_killed = False
@@ -121,22 +122,40 @@ def loadout_rewards(playerstep,big_bullet_speed):
     return playerimage,playercenter,cooldown,playerstep,big_bullet_speed  
     
 # Enemy class, makes it possible to have multiple enemies.
+class Enemy_bullet():
+    def __init__(self,enemyx,enemyy):
+        self.image = pygame.image.load("images/bullet.png").convert_alpha()
+        self.speed = -7
+        
+        self.x = enemyx + 5
+        self.y = enemyy + 5
+
+    def image_blit(self,screen):
+        screen.blit(self.image, (self.x,self.y))
+
+    def movement(self):
+        self.y -= self.speed
 class Enemy():
-    def __init__(self,img_path,health,boss,steps,finalboss):
+    def __init__(self,img_path,health,bullet_enemy,steps,finalboss):
         self.image = pygame.image.load(img_path).convert_alpha()
+        self.bulletimage = pygame.image.load("images/bullet.png").convert_alpha()
         self.x = random.randint(20,380)    
         self.y = random.randint(-2,0)
+        self.bulletx = self.x
+        self.bullety = self.y
         self.steps = steps
         self.enemyhealth = health
         health = 3
-        self.boss = boss
+        self.bulletenemy = bullet_enemy
         self.finalboss = finalboss
+  
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
     def movement(self):
         
         self.y += self.steps
+ 
 
     # Enemy loses one health every time it gets hit by a bullet
     def detection(self):
@@ -241,6 +260,7 @@ playery2 = y - (y // 4)
 bulletlist = []
 enemylist = []
 big_bulletlist = []
+enemy_bullets = []
 
 # Main loop
 while True:
@@ -271,9 +291,16 @@ while True:
     # Appends enemys every two seconds
     if current_time - last_spawn_time > spawn_delay:
         for i in range(enemyspawns):
-            enemylist.append(Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False)) 
+            enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False)) 
+            enemyx = enemy.x
+            enemyy = enemy.y
+            enemylist.append(enemy)
         last_spawn_time = current_time
         current_wave += 1
+        if current_wave % 5 == 0:
+            enemylist.append(Enemy("images/tmp.png", enemyhealth,True,0.5,False))
+
+
     
     playerx,playery = player_movement(playerx,playery,playerstep)
     playerx2,playery2 = player_movement2(playerx2,playery2)
@@ -310,7 +337,7 @@ while True:
             enemy.y < playery + 53 and  
             enemy.y + 29 > playery):  
             playerhealth -= 1
-            if enemy.boss == False and enemy.finalboss == False:
+            if enemy.finalboss == False:
                 enemylist.remove(enemy)
            
     for enemy in enemylist:
@@ -319,7 +346,7 @@ while True:
             enemy.y < playery2 + 53 and  
             enemy.y + 29 > playery2):  
             playerhealth2 -= 1
-            if enemy.boss == False and enemy.finalboss == False:
+            if enemy.finalboss == False:
                 enemylist.remove(enemy)
             
     if playerhealth == 0 or playerhealth2 == 0:
@@ -345,10 +372,34 @@ while True:
 
     # Update enemy
     for enemy in enemylist:
+      
         enemy.image_blit(screen)
         enemy.movement()
         if enemy.y > 700:
-            enemylist.remove(enemy)           
+            enemylist.remove(enemy)  
+        if enemy.bulletenemy :
+            if enemy.bulletenemy and enemy.y > 0:
+                if random.random() < 0.02:  # 2% chance per frame (~1.2 bullets per second at 60 FPS)
+                    bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
+                    enemy_bullets.append(bullet)
+        
+    for enemy_bullet in enemy_bullets:
+        enemy_bullet.movement()
+        enemy_bullet.image_blit(screen)
+        if enemy_bullet.y > 700:
+            enemy_bullets.remove(enemy_bullet)
+    
+    for enemy_bullet in enemy_bullets:
+        if playerx <= enemy_bullet.x <= playerx+50 and playery <= enemy_bullet.y <= playery+50:
+            playerhealth -= 1
+            enemy_bullets.remove(enemy_bullet)
+    for enemy_bullet in enemy_bullets:
+        if playerx2 <= enemy_bullet.x <= playerx2+50 and playery2 <= enemy_bullet.y <= playery2+50:
+            playerhealth2 -= 1
+            enemy_bullets.remove(enemy_bullet)
+        
+
+
     # Deletes bullet after it is out of screen   
   
     for bullet in bulletlist:
@@ -365,7 +416,7 @@ while True:
                 hitboxx = 200
                 hitboxy =432
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
-                print(f"{enemy.boss=}")
+         
                 bulletlist.remove(bullet)
                 enemy.enemyhealth -= 1
                 if enemy.enemyhealth <= 0:
@@ -396,15 +447,15 @@ while True:
         big_bullet.image_blit(screen)
         big_bullet.movement()
         if big_bullet.y <0:
-            big_bulletlist.remove(bullet)
+            big_bulletlist.remove(big_bullet)
             continue
         for enemy in enemylist:
             if enemy.finalboss == False:
-                hitboxx = 40
+                hitboxx = 50
                 hitboxy = 40
             else:
                 hitboxx = 200
-                hitboxy =432    
+                hitboxy =370   
         # Bullet detection
             if enemy.x <= big_bullet.x <= enemy.x+hitboxx and enemy.y <= big_bullet.y <= enemy.y+hitboxy:
                 big_bulletlist.remove(big_bullet)
@@ -429,8 +480,8 @@ while True:
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
-    if player1_points > 1 and not final_boss_spawned:
-        enemylist.append(Enemy("images/Final_boss.png",50,False,0.2,True))
+    if player1_points > 1000 and not final_boss_spawned:
+        enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True))
         hitboxx = 90
         hitboxy = 200
         for enemy in enemylist:
@@ -442,7 +493,7 @@ while True:
                 current_wave += 1
                 final_boss_spawned = True
             elif enemy.finalboss == False:
-                hitboxx = 40
+                hitboxx = 50
                 hitboxy = 40
 
     if final_boss_killed == True:
