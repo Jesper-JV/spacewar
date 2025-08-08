@@ -9,7 +9,7 @@ lo_collected = 0
 playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
-playerhealth = 3
+playerhealth = 5
 current_wave = 1
 
 big_bullet_speed = 2
@@ -136,7 +136,7 @@ class Enemy_bullet():
     def movement(self):
         self.y -= self.speed
 class Enemy():
-    def __init__(self,img_path,health,bullet_enemy,steps,finalboss):
+    def __init__(self,img_path,health,bullet_enemy,steps,finalboss,zigzag):
         self.image = pygame.image.load(img_path).convert_alpha()
         self.bulletimage = pygame.image.load("images/bullet.png").convert_alpha()
         self.x = random.randint(20,380)    
@@ -148,6 +148,7 @@ class Enemy():
         health = 3
         self.bulletenemy = bullet_enemy
         self.finalboss = finalboss
+        self.zigzag = zigzag
   
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
@@ -155,6 +156,16 @@ class Enemy():
     def movement(self):
         
         self.y += self.steps
+    def zigzag_movement(self):
+        
+        if self.x > 360:
+            self.y += 40
+            self.steps = self.steps *(-1)
+        if self.x < 0:
+            self.y += 40
+            self.steps = self.steps *(-1)
+        self.x += self.steps
+
  
 
     # Enemy loses one health every time it gets hit by a bullet
@@ -291,14 +302,17 @@ while True:
     # Appends enemys every two seconds
     if current_time - last_spawn_time > spawn_delay:
         for i in range(enemyspawns):
-            enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False)) 
+            enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False,False)) 
             enemyx = enemy.x
             enemyy = enemy.y
             enemylist.append(enemy)
         last_spawn_time = current_time
         current_wave += 1
-        if current_wave % 5 == 0:
-            enemylist.append(Enemy("images/tmp.png", enemyhealth,True,0.5,False))
+        if current_wave % 10 == 0:
+            enemylist.append(Enemy("images/tmp.png", enemyhealth,True,0.5,False,False))
+        if current_wave % 7 == 0:
+            enemylist.append(Enemy("images/enemy_blue.png", enemyhealth,False,2,False,True))
+
 
 
     
@@ -372,14 +386,18 @@ while True:
 
     # Update enemy
     for enemy in enemylist:
-      
+        
         enemy.image_blit(screen)
-        enemy.movement()
+        if enemy.zigzag == False:
+            enemy.movement()
+        else:
+            enemy.zigzag_movement()
         if enemy.y > 700:
             enemylist.remove(enemy)  
         if enemy.bulletenemy :
             if enemy.bulletenemy and enemy.y > 0:
-                if random.random() < 0.02:  # 2% chance per frame (~1.2 bullets per second at 60 FPS)
+                bullet_chance = random.randint(1,100)
+                if bullet_chance == 2: 
                     bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
                     enemy_bullets.append(bullet)
         
@@ -480,8 +498,8 @@ while True:
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
-    if player1_points > 1000 and not final_boss_spawned:
-        enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True))
+    if player1_points > 1 and not final_boss_spawned:
+        enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
         hitboxx = 90
         hitboxy = 200
         for enemy in enemylist:
