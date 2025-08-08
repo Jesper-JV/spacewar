@@ -268,13 +268,11 @@ playerx = x // 2
 playery = y - (y // 4)
 playerx2 = x // 2
 playery2 = y - (y // 4)
-
 # Lists
 bulletlist = []
 enemylist = []
 big_bulletlist = []
 enemy_bullets = []
-
 # Main loop
 while True:
     # Cooldown and track if window is closed
@@ -315,12 +313,8 @@ while True:
         if current_wave % 7 == 0:
             enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
 
-
-
-    
     playerx,playery = player_movement(playerx,playery,playerstep)
     playerx2,playery2 = player_movement2(playerx2,playery2)
-
 
     # Draw background
     scroll_y -= 1
@@ -328,7 +322,7 @@ while True:
         scroll_y = bg_height
     screen.blit(background, (0, - scroll_y))
     screen.blit(background,(0,bg_height - scroll_y))
-    
+
     text2 = font2.render("Points: " + str(player1_points),True,white)
     text4 = font4.render("PlayerTwo health: " + str(playerhealth2),True,white)
     playerhealth1_text = playerhealth1.render( "PlayerOne health: "+ str(playerhealth), True,white)
@@ -342,10 +336,7 @@ while True:
     screen.blit(highscore1, highscore_rect)
     screen.blit(text2, text2_rect)
     screen.blit(playerhealth1_text, playerhealth1_text_rect)
-    screen.blit(text4, text4_rect)
-    
-
-    
+    screen.blit(text4, text4_rect)   
     #screen.blit(playerimage, (playerx, playery))
     for enemy in enemylist:
         if (enemy.x < playerx + 50 and
@@ -374,21 +365,17 @@ while True:
 
     if game_status == "loss":
         # Shows "WARZONE DEFEAT" text
-        screen.blit(text3, text3_rect)
-    
+        screen.blit(text3, text3_rect)    
     if game_status == "ongoing":
         # Draw player (needed so it still shows when no keys pressed)
         screen.blit(playerimage, (playerx, playery)) 
         screen.blit(playerimage2, (playerx2, playery2))
-
-
     if game_status == "win":
         # Refreshes "YOU WIN" text
         screen.blit(text1, text1_rect)
- 
+
     # Update enemy
-    for enemy in enemylist:
-        
+    for enemy in enemylist:    
         enemy.image_blit(screen)
         if enemy.zigzag == False:
             enemy.movement()
@@ -396,8 +383,7 @@ while True:
             zigzagx,zigzagy = enemy.zigzag_movement()
             if enemy.baby == True:
                 enemy.x = zigzagx
-                enemy.y = zigzagy
-          
+                enemy.y = zigzagy     
         if enemy.y > 700:
             enemylist.remove(enemy)  
         if enemy.bulletenemy :
@@ -417,15 +403,12 @@ while True:
         if playerx <= enemy_bullet.x <= playerx+50 and playery <= enemy_bullet.y <= playery+50:
             playerhealth -= 1
             enemy_bullets.remove(enemy_bullet)
+
     for enemy_bullet in enemy_bullets:
         if playerx2 <= enemy_bullet.x <= playerx2+50 and playery2 <= enemy_bullet.y <= playery2+50:
             playerhealth2 -= 1
             enemy_bullets.remove(enemy_bullet)
-        
-
-
-    # Deletes bullet after it is out of screen   
-  
+    # Deletes bullet after it is out of screen     
     for bullet in bulletlist:
         bullet.image_blit(screen)
         bullet.movement()
@@ -440,15 +423,10 @@ while True:
                 hitboxx = 200
                 hitboxy =432
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
-         
                 bulletlist.remove(bullet)
                 enemy.enemyhealth -= 1
                 if enemy.enemyhealth <= 0:
-                    enemylist.remove(enemy)
-         
-          
-                   
-                          
+                    enemylist.remove(enemy)                    
                     if enemy.finalboss == True:
                         game_status = "win"
                         player1_points += 100
@@ -527,37 +505,28 @@ while True:
                 hitboxy = 40
 
     if final_boss_killed == True:
-        game_status = "win"
-        
+        game_status = "win"        
     # Difficulties depending on the players points
     if 100 > player1_points >= 25:
-        enemyspawns = 3
-        
+        enemyspawns = 3        
     if 150 > player1_points >= 100:
         enemyspawns = 5
-        
-
     if 250 > player1_points > 150:
         spawn_delay = 1750
         enemyspawns = 6
         enemyimage = "images/enemy_red.png"
-
     if 500 > player1_points > 250:
         spawn_delay = 1500
-        enemyspawns = 8
-    
+        enemyspawns = 8    
     if 750 > player1_points >= 300:
         enemyspawns = 10
         enemyimage = "images/red_final .png"
-
     if 1000 > player1_points > 500:
         enemyhealth = 3
         spawn_delay = 1000
-
     if player1_points >= 1000:
         enemyspawns = 15
         spawn_delay = 500
-
 
     # Spawns loadout
     if loadoutsrn == True:      
@@ -601,11 +570,5 @@ while True:
                 if lo_collected >= 5:
                     playerhealth2 += 1
 
-    
-  
-
-
-         
     pygame.display.flip()
-    clock.tick(60)
-   
+    clock.tick(60)  
