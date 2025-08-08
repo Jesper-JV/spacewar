@@ -38,7 +38,7 @@ y = 700 # height of the frame
 last_shot_time = 0 # last
 last_shot_time2 = 0
 cooldown = 400 # cooldown between bullets
-cooldown2 = 1000
+cooldown2 = 1500
 boss_spawned = False # spawns boss once
 sound_played = False # plays sound once
 spawn_delay = 2000  # time in milliseconds between spawns
@@ -136,7 +136,7 @@ class Enemy_bullet():
     def movement(self):
         self.y -= self.speed
 class Enemy():
-    def __init__(self,img_path,health,bullet_enemy,steps,finalboss,zigzag):
+    def __init__(self,img_path,health,bullet_enemy,steps,finalboss = False,zigzag = False,baby = False):
         self.image = pygame.image.load(img_path).convert_alpha()
         self.bulletimage = pygame.image.load("images/bullet.png").convert_alpha()
         self.x = random.randint(20,380)    
@@ -149,6 +149,7 @@ class Enemy():
         self.bulletenemy = bullet_enemy
         self.finalboss = finalboss
         self.zigzag = zigzag
+        self.baby = baby
   
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
@@ -165,6 +166,7 @@ class Enemy():
             self.y += 40
             self.steps = self.steps *(-1)
         self.x += self.steps
+        return self.x, self.y
 
  
 
@@ -311,7 +313,7 @@ while True:
         if current_wave % 10 == 0:
             enemylist.append(Enemy("images/tmp.png", enemyhealth,True,0.5,False,False))
         if current_wave % 7 == 0:
-            enemylist.append(Enemy("images/enemy_blue.png", enemyhealth,False,2,False,True))
+            enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
 
 
 
@@ -383,15 +385,19 @@ while True:
     if game_status == "win":
         # Refreshes "YOU WIN" text
         screen.blit(text1, text1_rect)
-
+ 
     # Update enemy
     for enemy in enemylist:
         
         enemy.image_blit(screen)
         if enemy.zigzag == False:
             enemy.movement()
-        else:
-            enemy.zigzag_movement()
+        if enemy.zigzag == True:
+            zigzagx,zigzagy = enemy.zigzag_movement()
+            if enemy.baby == True:
+                enemy.x = zigzagx
+                enemy.y = zigzagy
+          
         if enemy.y > 700:
             enemylist.remove(enemy)  
         if enemy.bulletenemy :
@@ -477,7 +483,7 @@ while True:
         # Bullet detection
             if enemy.x <= big_bullet.x <= enemy.x+hitboxx and enemy.y <= big_bullet.y <= enemy.y+hitboxy:
                 big_bulletlist.remove(big_bullet)
-                enemy.enemyhealth -= 10
+                enemy.enemyhealth -= 5
                 if enemy.enemyhealth <= 0:
                     enemylist.remove(enemy)         
                     if enemy.finalboss == True:
@@ -487,18 +493,24 @@ while True:
                         win_sound.play() 
                         final_boss_killed = True 
                         hitboxx = 200
-                        hitboxy = 432                   
+                        hitboxy = 432 
+                    if enemy.zigzag == True and not enemy.baby:
+                        enemy.x = enemy.x
+                        enemy.y = enemy.y
+                        for i in range(2):
+                            enemylist.append(Enemy("images/enemy_blue_baby.png", 3,False,4,False,True,True))   
+                                     
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.randint(1,15)
+                        lo_spawn = random.randint(1,10)
                         #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and loadoutsrn == False:
                             loadoutsrn = True
                             loadout_inbound.play() 
                             loadout = pygame.image.load("images/loadout.png").convert_alpha()
                 break
-    if player1_points > 1 and not final_boss_spawned:
+    if player1_points > 1000 and not final_boss_spawned:
         enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
         hitboxx = 90
         hitboxy = 200
