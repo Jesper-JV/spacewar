@@ -11,17 +11,16 @@ enemyspawns = 2
 enemyhealth = 2
 playerhealth = 5
 current_wave = 1
-
 big_bullet_speed = 2
 final_boss_spawned = False
 final_boss_killed = False
+zigzag_enemy = False
 playerhealth2 = 5
 bosses_killed = 0
 enemyimage = "images/enemy_green.png"
 with open("highscore.txt", "r") as f:
     highscore = int(f.read())
 loadout_inbound_sound = False
-loadout_is_collected = False
 active = False
 hitboxx = 40 
 game_status = "ongoing" 
@@ -66,6 +65,7 @@ def player_movement(x,y,playerstep):
     if y < 100:
         y = 100
     return x,y
+
 def player_movement2(x2,y2):
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d]:
@@ -87,7 +87,6 @@ def player_movement2(x2,y2):
         y2 = 100
     return x2,y2
 # Function to save highscore
-
 def update_highscore(player1_points):
     with open("highscore.txt", "r") as f:
         highscore = int(f.read())
@@ -98,28 +97,7 @@ def update_highscore(player1_points):
         username = input("what is your name? ")
         print(username)
 # Function to give you rewards after you take loadout
-def loadout_rewards(playerstep,big_bullet_speed):       
-    spaceship_img = "images/spaceship_upg1.png"
-    playerimage = pygame.image.load(spaceship_img).convert_alpha()
-    playercenter = 48
-    cooldown = 325
-    big_bullet_speed += 1
-    if lo_collected >= 2:
-        cooldown = 200
-        big_bullet_speed += 1
-    if lo_collected == 3:
-        playerstep = 7
-        cooldown = 200
 
-    if 5 > lo_collected >= 4:
-        playerstep = 9
-        cooldown = 0
-    
-    if lo_collected >= 5:
-        playerstep = 10
-        cooldown = 0
-        
-    return playerimage,playercenter,cooldown,playerstep,big_bullet_speed  
     
 # Enemy class, makes it possible to have multiple enemies.
 class Enemy_bullet():
@@ -135,6 +113,7 @@ class Enemy_bullet():
 
     def movement(self):
         self.y -= self.speed
+
 class Enemy():
     def __init__(self,img_path,health,bullet_enemy,steps,finalboss = False,zigzag = False,baby = False):
         self.image = pygame.image.load(img_path).convert_alpha()
@@ -209,6 +188,7 @@ class Bullet():
         self.y -= self.speed
 
 class Big_bullet():
+
     def __init__(self,playerx2,playery2,big_bullet_speed):
         self.image = pygame.image.load("images/missile.png").convert_alpha()
         self.speed = big_bullet_speed
@@ -222,7 +202,84 @@ class Big_bullet():
     def movement(self):
         self.y -= self.speed
 
+class Loadout():
+    def __init__(self,gone):
+        self.image = pygame.image.load("images/loadout.png").convert_alpha()
+        self.speed = 3
+        self.x = random.randint(0,360)
+        self.y = -30
+        self.collected = 0
+        self.gone = gone
+  
 
+
+    def image_blit(self,screen):
+        screen.blit(self.image, (self.x,self.y))
+
+    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2,loadout_list):
+        
+        if (self.x < playerx + 50 and 
+            self.x + 40 > playerx and
+            self.y < playery + 53 and  
+            self.y + 29 > playery):
+            loadout_collected.play() 
+            self.collected += 1
+            playerhealth += 1  
+            self.x =random.randint(0,360)
+            self.y = -30
+         
+            self.gone = True
+       
+           
+        if (self.x < playerx2 + 50 and 
+            self.x + 40 > playerx2 and
+            self.y < playery2 + 53 and  
+            self.y + 29 > playery2):
+            loadout_collected.play() 
+            self.collected += 1
+            playerhealth2 += 1  
+            self.x =random.randint(0,360)
+            self.y = -30
+
+ 
+            self.gone = True
+            if self.collected >= 5:
+                playerhealth += 2
+        return playerhealth,playerhealth2,loadoutsrn
+    
+    def loadout_rewards(self,big_bullet_speed,playerstep):
+        spaceship_img = "images/spaceship_upg1.png"
+        playerimage = pygame.image.load(spaceship_img).convert_alpha()
+        playercenter = 48
+        cooldown = 325
+        big_bullet_speed = 5
+        if self.collected >= 2:
+            cooldown = 200
+            big_bullet_speed = 6
+        if lo_collected == 3:
+            playerstep = 7
+            cooldown = 200
+
+        if 5 > self.collected >= 4:
+            playerstep = 9
+            cooldown = 0
+    
+        if self.collected >= 5:
+            playerstep = 10
+            cooldown = 0
+        
+
+        return playerimage,playercenter,cooldown,playerstep,big_bullet_speed
+    def movement(self):
+        self.y += self.speed
+        if self.y > 700:
+            self.gone = True
+            
+
+        
+
+            
+    
 pygame.init()
 # Create frame
 screen = pygame.display.set_mode((x, y))
@@ -273,6 +330,7 @@ bulletlist = []
 enemylist = []
 big_bulletlist = []
 enemy_bullets = []
+loadout_list = []
 # Main loop
 while True:
     # Cooldown and track if window is closed
@@ -310,8 +368,9 @@ while True:
         current_wave += 1
         if current_wave % 10 == 0:
             enemylist.append(Enemy("images/tmp.png", enemyhealth,True,0.5,False,False))
-        if current_wave % 7 == 0:
+        if current_wave % 7 == 0 and zigzag_enemy == False:
             enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
+            zigzag_enemy = True
 
     playerx,playery = player_movement(playerx,playery,playerstep)
     playerx2,playery2 = player_movement2(playerx2,playery2)
@@ -380,10 +439,7 @@ while True:
         if enemy.zigzag == False:
             enemy.movement()
         if enemy.zigzag == True:
-            zigzagx,zigzagy = enemy.zigzag_movement()
-            if enemy.baby == True:
-                enemy.x = zigzagx
-                enemy.y = zigzagy     
+            zigzagx,zigzagy = enemy.zigzag_movement()   
         if enemy.y > 700:
             enemylist.remove(enemy)  
         if enemy.bulletenemy :
@@ -438,12 +494,19 @@ while True:
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.randint(1,15)
+                        lo_spawn = 7
                         #makes it a chance for loadout every time you kill an enemy
-                        if lo_spawn == 7 and loadoutsrn == False:
-                            loadoutsrn = True
-                            loadout_inbound.play() 
-                            loadout = pygame.image.load("images/loadout.png").convert_alpha()
+                        if lo_spawn == 7 and len(loadout_list) == 0:
+                            loadout = Loadout(False)
+                            loadout_list.append(loadout)
+                                    
+                            lo_spawn = 8
+                       
+                        #makes it a chance for loadout every time you kill an enemy
+                      
+                            
+
+                            
                 break
     for big_bullet in big_bulletlist:
         big_bullet.image_blit(screen)
@@ -473,21 +536,29 @@ while True:
                         hitboxx = 200
                         hitboxy = 432 
                     if enemy.zigzag == True and not enemy.baby:
-                        enemy.x = enemy.x
-                        enemy.y = enemy.y
-                        for i in range(2):
-                            enemylist.append(Enemy("images/enemy_blue_baby.png", 3,False,4,False,True,True))   
+                        zigzag_enemy = False
+                        for i in range(random.randint(2,4)):
+                            enemylist.append(Enemy("images/enemy_blue_baby.png", 3,False,4,False,True,True)) 
+                            for enemy in enemylist:
+                                if enemy.baby == True:
+                                    enemy.x = random.randint(zigzagx,zigzagx + 120)
+                                    enemy.y = zigzagy 
+                                    hitboxx = 20
+                                    hitboxy = 15 
                                      
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.randint(1,10)
+                        lo_spawn = 7
                         #makes it a chance for loadout every time you kill an enemy
-                        if lo_spawn == 7 and loadoutsrn == False:
-                            loadoutsrn = True
-                            loadout_inbound.play() 
-                            loadout = pygame.image.load("images/loadout.png").convert_alpha()
+                        if lo_spawn == 7 and len(loadout_list) == 0:
+                            loadout = Loadout(False)
+                            loadout_list.append(loadout)
+                            loadoutsrn = True            
+                            lo_spawn = 8
                 break
+  
+
     if player1_points > 1000 and not final_boss_spawned:
         enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
         hitboxx = 90
@@ -503,7 +574,7 @@ while True:
             elif enemy.finalboss == False:
                 hitboxx = 50
                 hitboxy = 40
-
+ 
     if final_boss_killed == True:
         game_status = "win"        
     # Difficulties depending on the players points
@@ -529,46 +600,57 @@ while True:
         spawn_delay = 500
 
     # Spawns loadout
-    if loadoutsrn == True:      
-        screen.blit(loadout, (loadoutx, loadouty))
-        loadouty += 2
-        # Detects if the loadout is out of screen
-        if loadouty >= 700:  
-            loadoutsrn = False
-            loadoutx =random.randint(0,380)
-            loadouty = -30
-        # Detects if player have touched the loadout
-        if (loadoutx < playerx + 50 and 
-            loadoutx + 40 > playerx and
-            loadouty < playery + 53 and  
-            loadouty + 29 > playery):
-            loadout_collected.play() 
-            loadoutsrn = False 
-            lo_collected += 1
-            playerhealth += 1  
-            loadoutx =random.randint(0,380)
-            loadouty = -30
-            if lo_collected >= 1:  
-                playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
-                # Gives player more health if loadout collected is more than 5
-                if lo_collected >= 5:
-                    playerhealth += 1
+    # if loadoutsrn == True:      
+    #     screen.blit(loadout, (loadoutx, loadouty))
+    #     loadouty += 2
+    #     # Detects if the loadout is out of screen
+    #     if loadouty >= 700:  
+    #         loadoutsrn = False
+    #         loadoutx =random.randint(0,380)
+    #         loadouty = -30
+    #     # Detects if player have touched the loadout
+    #     if (loadoutx < playerx + 50 and 
+    #         loadoutx + 40 > playerx and
+    #         loadouty < playery + 53 and  
+    #         loadouty + 29 > playery):
+    #         loadout_collected.play() 
+    #         loadoutsrn = False 
+    #         lo_collected += 1
+    #         playerhealth += 1  
+    #         loadoutx =random.randint(0,380)
+    #         loadouty = -30
+    #         if lo_collected >= 1:  
+    #             playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
+    #             # Gives player more health if loadout collected is more than 5
+    #             if lo_collected >= 5:
+    #                 playerhealth += 1
 
-        if (loadoutx < playerx2 + 50 and 
-            loadoutx + 40 > playerx2 and
-            loadouty < playery2 + 53 and  
-            loadouty + 29 > playery2):
-            loadout_collected.play() 
-            loadoutsrn = False 
-            lo_collected += 1
-            playerhealth2 += 1  
-            loadoutx =random.randint(0,380)
-            loadouty = -30
-            if lo_collected >= 1:  
-                playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
-                # Gives player more health if loadout collected is more than 5
-                if lo_collected >= 5:
-                    playerhealth2 += 1
+    #     if (loadoutx < playerx2 + 50 and 
+    #         loadoutx + 40 > playerx2 and
+    #         loadouty < playery2 + 53 and  
+    #         loadouty + 29 > playery2):
+    #         loadout_collected.play() 
+    #         loadoutsrn = False 
+    #         lo_collected += 1
+    #         playerhealth2 += 1  
+    #         loadoutx =random.randint(0,360)
+    #         loadouty = -30
+    #         if lo_collected >= 1:  
+    #             playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
+    #             # Gives player more health if loadout collected is more than 5
+    #             if lo_collected >= 5:
+    #                 playerhealth2 += 1
+    for loadouts in loadout_list:
+        
+        loadouts.image_blit(screen)
+        playerhealth,playerhealt,loadoutsrn = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,loadout_list)
+        loadoutsrn = loadouts.movement()
+        if loadouts.gone == True:
+            loadout_list.remove(loadouts)
+        if loadouts.collected >= 1:
+            playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadouts.loadout_rewards(big_bullet_speed,playerstep)
+        
+
 
     pygame.display.flip()
     clock.tick(60)  
