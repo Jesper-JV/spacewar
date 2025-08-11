@@ -95,10 +95,7 @@ def update_highscore(player1_points):
         with open("highscore.txt", "w") as f:
             f.write(str(highscore))
         username = input("what is your name? ")
-        print(username)
-# Function to give you rewards after you take loadout
-
-    
+        print(username)   
 # Enemy class, makes it possible to have multiple enemies.
 class Enemy_bullet():
     def __init__(self,enemyx,enemyy):
@@ -203,12 +200,14 @@ class Big_bullet():
         self.y -= self.speed
 
 class Loadout():
-    def __init__(self,gone):
+    def __init__(self,gone = False,health = False):
         self.image = pygame.image.load("images/loadout.png").convert_alpha()
         self.speed = 3
         self.x = random.randint(0,360)
         self.y = -30
-        self.collected = 0
+        self.collected_amount = 0
+        self.health = health
+        self.collected = False
         self.gone = gone
   
 
@@ -222,29 +221,39 @@ class Loadout():
             self.x + 40 > playerx and
             self.y < playery + 53 and  
             self.y + 29 > playery):
-            loadout_collected.play() 
-            self.collected += 1
+             
             playerhealth += 1  
             self.x =random.randint(0,360)
-            self.y = -30
-         
+            self.y = -30 
             self.gone = True
-       
-           
+            self.collected = True
+            if self.health == True:
+                playerhealth += 2
+                health_lo_collected.play()
+            elif not self.health:
+                self.collected_amount += 1
+                loadout_collected.play()
+
         if (self.x < playerx2 + 50 and 
             self.x + 40 > playerx2 and
             self.y < playery2 + 53 and  
-            self.y + 29 > playery2):
-            loadout_collected.play() 
-            self.collected += 1
+            self.y + 29 > playery2): 
             playerhealth2 += 1  
             self.x =random.randint(0,360)
             self.y = -30
+            self.gone = True
+            self.collected = True
+            if self.health == True:
+                playerhealth2 += 2
+                health_lo_collected.play()
+            elif not self.health:
+                loadout_collected.play()
+                self.collected_amount += 1
 
  
             self.gone = True
-            if self.collected >= 5:
-                playerhealth += 2
+            if self.collected_amount >= 5:
+                playerhealth2 += 2
         return playerhealth,playerhealth2,loadoutsrn
     
     def loadout_rewards(self,big_bullet_speed,playerstep):
@@ -253,18 +262,18 @@ class Loadout():
         playercenter = 48
         cooldown = 325
         big_bullet_speed = 5
-        if self.collected >= 2:
+        if self.collected_amount >= 2:
             cooldown = 200
             big_bullet_speed = 6
         if lo_collected == 3:
             playerstep = 7
             cooldown = 200
 
-        if 5 > self.collected >= 4:
+        if 5 > self.collected_amount >= 4:
             playerstep = 9
             cooldown = 0
     
-        if self.collected >= 5:
+        if self.collected_amount >= 5:
             playerstep = 10
             cooldown = 0
         
@@ -320,6 +329,7 @@ explosion_sound = pygame.mixer.Sound("sounds/explosion.wav")
 win_sound = pygame.mixer.Sound("sounds/win_sound.wav")
 loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
 loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
+health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
@@ -494,18 +504,20 @@ while True:
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = 7
+                        lo_spawn = random.choice([7])
                         #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and len(loadout_list) == 0:
-                            loadout = Loadout(False)
+                            loadout = Loadout()
                             loadout_list.append(loadout)
+                            loadout_inbound.play()
                                     
                             lo_spawn = 8
+                        if lo_spawn == 10 and len(loadout_list) == 0:
+                            loadout_list.append(Loadout(False,True))
+                            loadout_inbound.play()
+
                        
                         #makes it a chance for loadout every time you kill an enemy
-                      
-                            
-
                             
                 break
     for big_bullet in big_bulletlist:
@@ -549,16 +561,18 @@ while True:
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = 7
+                        lo_spawn = random.choice([10])
                         #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and len(loadout_list) == 0:
                             loadout = Loadout(False)
                             loadout_list.append(loadout)
-                            loadoutsrn = True            
+                            loadout_inbound.play()           
                             lo_spawn = 8
+                        if lo_spawn == 10 and len(loadout_list) == 0:
+                            loadout_list.append(Loadout(False,True))
+                            loadout_inbound.play()
                 break
   
-
     if player1_points > 1000 and not final_boss_spawned:
         enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
         hitboxx = 90
@@ -599,56 +613,16 @@ while True:
         enemyspawns = 15
         spawn_delay = 500
 
-    # Spawns loadout
-    # if loadoutsrn == True:      
-    #     screen.blit(loadout, (loadoutx, loadouty))
-    #     loadouty += 2
-    #     # Detects if the loadout is out of screen
-    #     if loadouty >= 700:  
-    #         loadoutsrn = False
-    #         loadoutx =random.randint(0,380)
-    #         loadouty = -30
-    #     # Detects if player have touched the loadout
-    #     if (loadoutx < playerx + 50 and 
-    #         loadoutx + 40 > playerx and
-    #         loadouty < playery + 53 and  
-    #         loadouty + 29 > playery):
-    #         loadout_collected.play() 
-    #         loadoutsrn = False 
-    #         lo_collected += 1
-    #         playerhealth += 1  
-    #         loadoutx =random.randint(0,380)
-    #         loadouty = -30
-    #         if lo_collected >= 1:  
-    #             playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
-    #             # Gives player more health if loadout collected is more than 5
-    #             if lo_collected >= 5:
-    #                 playerhealth += 1
-
-    #     if (loadoutx < playerx2 + 50 and 
-    #         loadoutx + 40 > playerx2 and
-    #         loadouty < playery2 + 53 and  
-    #         loadouty + 29 > playery2):
-    #         loadout_collected.play() 
-    #         loadoutsrn = False 
-    #         lo_collected += 1
-    #         playerhealth2 += 1  
-    #         loadoutx =random.randint(0,360)
-    #         loadouty = -30
-    #         if lo_collected >= 1:  
-    #             playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadout_rewards(playerstep,big_bullet_speed)
-    #             # Gives player more health if loadout collected is more than 5
-    #             if lo_collected >= 5:
-    #                 playerhealth2 += 1
     for loadouts in loadout_list:
         
         loadouts.image_blit(screen)
-        playerhealth,playerhealt,loadoutsrn = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,loadout_list)
+        playerhealth,playerhealth2,loadoutsrn = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,loadout_list)
         loadoutsrn = loadouts.movement()
         if loadouts.gone == True:
             loadout_list.remove(loadouts)
-        if loadouts.collected >= 1:
-            playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadouts.loadout_rewards(big_bullet_speed,playerstep)
+            if loadouts.collected:
+                if loadouts.collected_amount >= 1:
+                    playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadouts.loadout_rewards(big_bullet_speed,playerstep)
         
 
 
