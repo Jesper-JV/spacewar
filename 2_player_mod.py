@@ -17,6 +17,7 @@ final_boss_killed = False
 zigzag_enemy = False
 playerhealth2 = 5
 bosses_killed = 0
+bullet_damage = 1
 enemyimage = "images/enemy_green.png"
 with open("highscore.txt", "r") as f:
     highscore = int(f.read())
@@ -172,8 +173,8 @@ class Enemy():
                 
 # Makes it possible to have multiple bullets at the same time                       
 class Bullet():
-    def __init__(self,playerx,playery):
-        self.image = pygame.image.load("images/bullet.png").convert_alpha()
+    def __init__(self,playerx,playery,img = "images/bullet.png"):
+        self.image = pygame.image.load(img).convert_alpha()
         self.speed = 7
         self.x = playerx+playercenter
         self.y = playery
@@ -200,7 +201,7 @@ class Big_bullet():
         self.y -= self.speed
 
 class Loadout():
-    def __init__(self,img_path = "images/loadout.png",gone = False,health = False,rapid_fire = False):
+    def __init__(self,img_path = "images/loadout.png",gone = False,health = False,rapid_fire = False,launcher = False):
         self.image = pygame.image.load(img_path).convert_alpha()
         self.speed = 2
         self.x = random.randint(0,360)
@@ -210,6 +211,7 @@ class Loadout():
         self.collected = False
         self.gone = gone
         self.rapid_fire = rapid_fire
+        self.launcher = launcher
   
 
 
@@ -235,6 +237,8 @@ class Loadout():
                 self.collected_amount += 1
                 if self.rapid_fire:
                     rapid_fire_collected.play()
+                elif self.launcher:
+                    pass
                     
                 else:
                     loadout_collected.play()
@@ -254,6 +258,14 @@ class Loadout():
             elif not self.health:
                 loadout_collected.play()
                 self.collected_amount += 1
+            if self.rapid_fire:
+                rapid_fire_collected.play()
+            elif self.launcher:
+                rapid_fire_collected.play()
+                    
+            else:
+                loadout_collected.play()
+
 
 
  
@@ -350,6 +362,7 @@ loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
 rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
 fire_mod_change = pygame.mixer.Sound("sounds/fire_mod_change.wav")
+launcher = pygame.mixer.Sound("sounds/launcher.wav")
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
@@ -376,6 +389,7 @@ while True:
         if event.type == pygame.KEYDOWN:
             if current_time - last_shot_time >= cooldown:
                 if current_fire_mod == "single_fire":
+                    bullet_damage = 1
                     cooldown = 400
                     if event.key == pygame.K_l or event.key == pygame.K_SPACE:
                     
@@ -383,12 +397,24 @@ while True:
                         bulletlist.append(bullet)
                         shoot_sound.play()
                         last_shot_time = current_time
+        if event.type == pygame.KEYDOWN:
+            if current_time - last_shot_time >= cooldown:
+                if current_fire_mod == "launcher":
+                    bullet_damage = 2
+                    cooldown = 700
+                    if event.key == pygame.K_l or event.key == pygame.K_SPACE:
+                    
+                        bullet = Bullet(playerx, playery,"images/launcher_bullet.png")
+                        bulletlist.append(bullet)
+                        launcher.play()
+                        last_shot_time = current_time
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE]:
             if current_fire_mod == "rapid_fire":
-                cooldown = 100
+                bullet_damage = 1
+                cooldown = 200
                 if current_time - last_shot_time >= cooldown:
-                    cooldown = 100
+                    shoot_sound.play()
                     bullet = Bullet(playerx, playery)
                     bulletlist.append(bullet)
                     last_shot_time = current_time
@@ -406,10 +432,11 @@ while True:
             if event.key == pygame.K_c:
                 fire_mod_change.play()
                 mod += 1
-                print(current_fire_mod)
+               
                 if mod >= len(fire_mods):
                     mod = 0
                 current_fire_mod = fire_mods[mod]
+                print(current_fire_mod)
 
         
     # Appends enemys every two seconds
@@ -535,7 +562,7 @@ while True:
                 hitboxy =432
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
                 bulletlist.remove(bullet)
-                enemy.enemyhealth -= 1
+                enemy.enemyhealth -= bullet_damage
                 if enemy.enemyhealth <= 0:
                     enemylist.remove(enemy)                    
                     if enemy.finalboss == True:
@@ -545,11 +572,13 @@ while True:
                         win_sound.play() 
                         final_boss_killed = True 
                         hitboxx = 200
-                        hitboxy = 432                    
+                        hitboxy = 432   
+                    if enemy.zigzag == True:
+                        zigzag_enemy = False                 
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.choice([5])
+                        lo_spawn = random.choice([7,5,10,12])
                         #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and len(loadout_list) == 0:
                             loadout = Loadout("images/loadout.png")
@@ -563,8 +592,11 @@ while True:
                         if lo_spawn == 5 and not loadout_list:
                             loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
                             loadout_inbound.play()
-                            if not "rapid_fire" in fire_mods:
-                                fire_mods.append("rapid_fire")
+                            
+                        if lo_spawn == 12 and not loadout_list:
+                            loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
+                            loadout_inbound.play()
+                           
                             
                 break
     for big_bullet in big_bulletlist:
@@ -622,8 +654,10 @@ while True:
                         if lo_spawn == 5 and not loadout_list:
                             loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
                             loadout_inbound.play()
-                            if not "rapid_fire" in fire_mods:
-                                fire_mods.append("rapid_fire")
+                        if lo_spawn == 12 and not loadout_list:
+                            loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
+                            loadout_inbound.play()
+                            
                 break
   
     if player1_points > 1000 and not final_boss_spawned:
@@ -679,7 +713,9 @@ while True:
                 if loadouts.rapid_fire:
                     if not "rapid_fire" in fire_mods:
                         fire_mods.append("rapid_fire")
-        
+                if loadouts.launcher:
+                    if not "launcher" in fire_mods:
+                        fire_mods.append("launcher")         
 
 
     pygame.display.flip()
