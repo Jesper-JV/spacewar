@@ -45,15 +45,15 @@ last_spawn_time = pygame.time.get_ticks()  # current time
 
 def player_movement(x,y,playerstep):
     # Handle movement on key press inside event loop
-    keys = pygame.key.get_pressed()
+    
     if keys[pygame.K_LEFT]:
         x -= playerstep 
     if keys[pygame.K_RIGHT]:
         x += playerstep
     if keys[pygame.K_UP]:
-        y += -5
+        y += -playerstep
     if keys[pygame.K_DOWN]:
-        y += 5
+        y += playerstep
 
     # Boundary checks
     if x > 350:
@@ -200,22 +200,23 @@ class Big_bullet():
         self.y -= self.speed
 
 class Loadout():
-    def __init__(self,gone = False,health = False):
-        self.image = pygame.image.load("images/loadout.png").convert_alpha()
-        self.speed = 3
+    def __init__(self,img_path = "images/loadout.png",gone = False,health = False,rapid_fire = False):
+        self.image = pygame.image.load(img_path).convert_alpha()
+        self.speed = 2
         self.x = random.randint(0,360)
         self.y = -30
         self.collected_amount = 0
         self.health = health
         self.collected = False
         self.gone = gone
+        self.rapid_fire = rapid_fire
   
 
 
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
 
-    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2,loadout_list):
+    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2):
         
         if (self.x < playerx + 50 and 
             self.x + 40 > playerx and
@@ -232,7 +233,11 @@ class Loadout():
                 health_lo_collected.play()
             elif not self.health:
                 self.collected_amount += 1
-                loadout_collected.play()
+                if self.rapid_fire:
+                    rapid_fire_collected.play()
+                    
+                else:
+                    loadout_collected.play()
 
         if (self.x < playerx2 + 50 and 
             self.x + 40 > playerx2 and
@@ -250,13 +255,15 @@ class Loadout():
                 loadout_collected.play()
                 self.collected_amount += 1
 
+
  
             self.gone = True
             if self.collected_amount >= 5:
                 playerhealth2 += 2
         return playerhealth,playerhealth2,loadoutsrn
     
-    def loadout_rewards(self,big_bullet_speed,playerstep):
+    def loadout_rewards(self,big_bullet_speed,playerstep,cooldown,cooldown2):
+        
         spaceship_img = "images/spaceship_upg1.png"
         playerimage = pygame.image.load(spaceship_img).convert_alpha()
         playercenter = 48
@@ -277,8 +284,19 @@ class Loadout():
             playerstep = 10
             cooldown = 0
         
+        if self.rapid_fire == True:
+            
+            cooldown2 -= 400
+            if cooldown < 0:
+                cooldown = 0
+            if cooldown2 < 100: 
+                cooldown2 = 100
+            
+            
+            
+    
 
-        return playerimage,playercenter,cooldown,playerstep,big_bullet_speed
+        return playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2
     def movement(self):
         self.y += self.speed
         if self.y > 700:
@@ -330,6 +348,8 @@ win_sound = pygame.mixer.Sound("sounds/win_sound.wav")
 loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
 loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
+rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
+fire_mod_change = pygame.mixer.Sound("sounds/fire_mod_change.wav")
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
@@ -341,6 +361,9 @@ enemylist = []
 big_bulletlist = []
 enemy_bullets = []
 loadout_list = []
+fire_mods = ["single_fire"]
+mod = 0
+current_fire_mod = fire_mods[mod]
 # Main loop
 while True:
     # Cooldown and track if window is closed
@@ -352,21 +375,43 @@ while True:
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if current_time - last_shot_time >= cooldown:
-
-                if event.key == pygame.K_l or event.key == pygame.K_SPACE:
+                if current_fire_mod == "single_fire":
+                    cooldown = 400
+                    if event.key == pygame.K_l or event.key == pygame.K_SPACE:
+                    
+                        bullet = Bullet(playerx, playery)
+                        bulletlist.append(bullet)
+                        shoot_sound.play()
+                        last_shot_time = current_time
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            if current_fire_mod == "rapid_fire":
+                cooldown = 100
+                if current_time - last_shot_time >= cooldown:
+                    cooldown = 100
                     bullet = Bullet(playerx, playery)
                     bulletlist.append(bullet)
-                    shoot_sound.play()
                     last_shot_time = current_time
 
+
+        
         if event.type == pygame.KEYDOWN:
             if current_time - last_shot_time2 >= cooldown2:
-
                 if event.key == pygame.K_e:
                     big_bullet = Big_bullet(playerx2,playery2,big_bullet_speed)
                     big_bulletlist.append(big_bullet)
                     shoot_sound.play()
                     last_shot_time2 = current_time
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_c:
+                fire_mod_change.play()
+                mod += 1
+                print(current_fire_mod)
+                if mod >= len(fire_mods):
+                    mod = 0
+                current_fire_mod = fire_mods[mod]
+
+        
     # Appends enemys every two seconds
     if current_time - last_spawn_time > spawn_delay:
         for i in range(enemyspawns):
@@ -425,7 +470,7 @@ while True:
             if enemy.finalboss == False:
                 enemylist.remove(enemy)
             
-    if playerhealth == 0 or playerhealth2 == 0:
+    if playerhealth == 0 or playerhealth2 == 0 and not game_status == "loss":
         game_status = "loss"
         update_highscore(player1_points)
         lose_sound.play()
@@ -504,20 +549,22 @@ while True:
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.choice([7])
+                        lo_spawn = random.choice([5])
                         #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and len(loadout_list) == 0:
-                            loadout = Loadout()
+                            loadout = Loadout("images/loadout.png")
                             loadout_list.append(loadout)
                             loadout_inbound.play()
                                     
                             lo_spawn = 8
                         if lo_spawn == 10 and len(loadout_list) == 0:
-                            loadout_list.append(Loadout(False,True))
+                            loadout_list.append(Loadout("images/loadout_heart.png",False,True))
                             loadout_inbound.play()
-
-                       
-                        #makes it a chance for loadout every time you kill an enemy
+                        if lo_spawn == 5 and not loadout_list:
+                            loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
+                            loadout_inbound.play()
+                            if not "rapid_fire" in fire_mods:
+                                fire_mods.append("rapid_fire")
                             
                 break
     for big_bullet in big_bulletlist:
@@ -561,16 +608,22 @@ while True:
                     else:
                         explosion_sound.play()
                         player1_points += 1
-                        lo_spawn = random.choice([10])
+                        lo_spawn = random.choice([5])
                         #makes it a chance for loadout every time you kill an enemy
                         if lo_spawn == 7 and len(loadout_list) == 0:
-                            loadout = Loadout(False)
+                            loadout = Loadout("images/loadout.png")
                             loadout_list.append(loadout)
-                            loadout_inbound.play()           
+                            loadout_inbound.play()
+                                    
                             lo_spawn = 8
                         if lo_spawn == 10 and len(loadout_list) == 0:
-                            loadout_list.append(Loadout(False,True))
+                            loadout_list.append(Loadout("images/loadout_heart.png",False,True))
                             loadout_inbound.play()
+                        if lo_spawn == 5 and not loadout_list:
+                            loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
+                            loadout_inbound.play()
+                            if not "rapid_fire" in fire_mods:
+                                fire_mods.append("rapid_fire")
                 break
   
     if player1_points > 1000 and not final_boss_spawned:
@@ -616,13 +669,16 @@ while True:
     for loadouts in loadout_list:
         
         loadouts.image_blit(screen)
-        playerhealth,playerhealth2,loadoutsrn = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,loadout_list)
+        playerhealth,playerhealth2,loadoutsrn = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2)
         loadoutsrn = loadouts.movement()
         if loadouts.gone == True:
             loadout_list.remove(loadouts)
             if loadouts.collected:
                 if loadouts.collected_amount >= 1:
-                    playerimage,playercenter,cooldown,playerstep,big_bullet_speed = loadouts.loadout_rewards(big_bullet_speed,playerstep)
+                    playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2 = loadouts.loadout_rewards(big_bullet_speed,playerstep,cooldown,cooldown2)
+                if loadouts.rapid_fire:
+                    if not "rapid_fire" in fire_mods:
+                        fire_mods.append("rapid_fire")
         
 
 
