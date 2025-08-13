@@ -2,7 +2,7 @@ import pygame
 import random
 import sys
 import pdb
-from library import Enemy_bullet, Enemy, Bullet
+from library import Enemy_bullet, Enemy, Bullet, Loadout
 
 loadoutx = random.randint(0,380)
 loadouty = -30
@@ -98,125 +98,7 @@ def update_highscore(player1_points):
         with open("highscore.txt", "w") as f:
             f.write(str(highscore))
         username = input("what is your name? ")
-        print(username)   
-
-
-
-class Loadout():
-    def __init__(self,img_path = "images/loadout.png",gone = False,health = False,rapid_fire = False,launcher = False):
-        self.image = pygame.image.load(img_path).convert_alpha()
-        self.speed = 2
-        self.x = random.randint(0,360)
-        self.y = -30
-        self.collected_amount = 0
-        self.health = health
-        self.collected = False
-        self.gone = gone
-        self.rapid_fire = rapid_fire
-        self.launcher = launcher
-  
-
-
-    def image_blit(self,screen):
-        screen.blit(self.image, (self.x,self.y))
-
-    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2):
-        
-        if (self.x < playerx + 50 and 
-            self.x + 40 > playerx and
-            self.y < playery + 53 and  
-            self.y + 29 > playery):
-             
-            playerhealth += 1  
-            self.x =random.randint(0,360)
-            self.y = -30 
-            self.gone = True
-            self.collected = True
-            if self.health == True:
-                playerhealth += 2
-                health_lo_collected.play()
-            elif not self.health:
-                self.collected_amount += 1
-                if self.rapid_fire:
-                    rapid_fire_collected.play()
-                elif self.launcher:
-                    pass
-                    
-                else:
-                    loadout_collected.play()
-
-        if (self.x < playerx2 + 50 and 
-            self.x + 40 > playerx2 and
-            self.y < playery2 + 53 and  
-            self.y + 29 > playery2): 
-            playerhealth2 += 1  
-            self.x =random.randint(0,360)
-            self.y = -30
-            self.gone = True
-            self.collected = True
-            if self.health == True:
-                playerhealth2 += 2
-                health_lo_collected.play()
-            elif not self.health:
-                loadout_collected.play()
-                self.collected_amount += 1
-            if self.rapid_fire:
-                rapid_fire_collected.play()
-            elif self.launcher:
-                rapid_fire_collected.play()
-                    
-            else:
-                loadout_collected.play()
-
-
-
- 
-            self.gone = True
-            if self.collected_amount >= 5:
-                playerhealth2 += 2
-        return playerhealth,playerhealth2
-    
-    def loadout_rewards(self,big_bullet_speed,playerstep,cooldown,cooldown2):
-        
-        spaceship_img = "images/spaceship_upg1.png"
-        playerimage = pygame.image.load(spaceship_img).convert_alpha()
-        playercenter = 48
-        cooldown = 325
-        big_bullet_speed = 5
-        if self.collected_amount >= 2:
-            cooldown = 200
-            big_bullet_speed = 6
-        if lo_collected == 3:
-            playerstep = 7
-            cooldown = 200
-
-        if 5 > self.collected_amount >= 4:
-            playerstep = 9
-            cooldown = 0
-    
-        if self.collected_amount >= 5:
-            playerstep = 10
-            cooldown = 0
-        
-        if self.rapid_fire == True:
-            
-            cooldown2 -= 200
-            if cooldown < 0:
-                cooldown = 0
-            if cooldown2 < 100: 
-                cooldown2 = 100
-            
-            
-            
-    
-
-        return playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2
-    def movement(self):
-        self.y += self.speed
-        if self.y > 700:
-            self.gone = True
-            
-
+        print(username)  
         
 
             
@@ -327,7 +209,7 @@ while True:
             if current_time - last_shot_time2 >= cooldown2:
                 if event.key == pygame.K_e:
                     
-                    bulletlist.append(Bullet(playerx2,playery2,10, "images/missile.png",big_bullet_speed))
+                    bulletlist.append(Bullet(playerx2,playery2,10, "images/missile.png",big_bullet_speed,True))
                     shoot_sound.play()
                     last_shot_time2 = current_time
         if event.type == pygame.KEYDOWN:
@@ -473,7 +355,11 @@ while True:
                 hitboxy =432
             if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
                 bulletlist.remove(bullet)
-                enemy.enemyhealth -= bullet_damage
+                if bullet.big_bullet == True:
+                    enemy.enemyhealth -= 5
+                else:
+                    enemy.enemyhealth -= bullet_damage
+
                 if enemy.enemyhealth <= 0:
                     enemylist.remove(enemy)                    
                     if enemy.finalboss == True:
@@ -510,67 +396,7 @@ while True:
                            
                             
                 break
-    for big_bullet in big_bulletlist:
-        big_bullet.image_blit(screen)
-        big_bullet.movement()
-        if big_bullet.y <0:
-            big_bulletlist.remove(big_bullet)
-            continue
-        for enemy in enemylist:
-            if enemy.finalboss == False:
-                hitboxx = 50
-                hitboxy = 40
-            else:
-                hitboxx = 200
-                hitboxy =370   
-        # Bullet detection
-            if enemy.x <= big_bullet.x <= enemy.x+hitboxx and enemy.y <= big_bullet.y <= enemy.y+hitboxy:
-                big_bulletlist.remove(big_bullet)
-                enemy.enemyhealth -= 5
-                if enemy.enemyhealth <= 0:
-                    enemylist.remove(enemy)         
-                    if enemy.finalboss == True:
-                        game_status = "win"
-                        player1_points += 100
-                        update_highscore(player1_points)
-                        win_sound.play() 
-                        final_boss_killed = True 
-                        hitboxx = 200
-                        hitboxy = 432 
-                    if enemy.zigzag == True and not enemy.baby:
-                        zigzag_enemy = False
-                        for i in range(random.randint(2,4)):
-                            enemylist.append(Enemy("images/enemy_blue_baby.png", 3,False,4,False,True,True)) 
-                            for enemy in enemylist:
-                                if enemy.baby == True:
-                                    enemy.x = random.randint(zigzagx,zigzagx + 120)
-                                    enemy.y = zigzagy 
-                                    hitboxx = 20
-                                    hitboxy = 15 
-                                     
-                    else:
-                        explosion_sound.play()
-                        player1_points += 1
-                        lo_spawn = random.choice([5])
-                        #makes it a chance for loadout every time you kill an enemy
-                        if lo_spawn == 7 and len(loadout_list) == 0:
-                            loadout = Loadout("images/loadout.png")
-                            loadout_list.append(loadout)
-                            loadout_inbound.play()
-                                    
-                            lo_spawn = 8
-                        if lo_spawn == 10 and len(loadout_list) == 0:
-                            loadout_list.append(Loadout("images/loadout_heart.png",False,True))
-                            loadout_inbound.play()
-                        if lo_spawn == 5 and not loadout_list:
-                            loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
-                            loadout_inbound.play()
-                        if lo_spawn == 12 and not loadout_list:
-                            loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
-                            loadout_inbound.play()
-                            
-                break
-  
+    
     if player1_points > 1000 and not final_boss_spawned:
         enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
         hitboxx = 90
@@ -614,7 +440,7 @@ while True:
     for loadouts in loadout_list:
         
         loadouts.image_blit(screen)
-        playerhealth,playerhealth2 = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2)
+        playerhealth,playerhealth2 = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected)
         loadoutsrn = loadouts.movement()
         if loadouts.gone == True:
             loadout_list.remove(loadouts)
