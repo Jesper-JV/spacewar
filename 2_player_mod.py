@@ -2,6 +2,8 @@ import pygame
 import random
 import sys
 import pdb
+from library import Enemy_bullet, Enemy, Bullet
+
 loadoutx = random.randint(0,380)
 loadouty = -30
 playercenter = 24
@@ -97,108 +99,8 @@ def update_highscore(player1_points):
             f.write(str(highscore))
         username = input("what is your name? ")
         print(username)   
-# Enemy class, makes it possible to have multiple enemies.
-class Enemy_bullet():
-    def __init__(self,enemyx,enemyy):
-        self.image = pygame.image.load("images/bullet.png").convert_alpha()
-        self.speed = -7
-        
-        self.x = enemyx + 5
-        self.y = enemyy + 5
 
-    def image_blit(self,screen):
-        screen.blit(self.image, (self.x,self.y))
 
-    def movement(self):
-        self.y -= self.speed
-
-class Enemy():
-    def __init__(self,img_path,health,bullet_enemy,steps,finalboss = False,zigzag = False,baby = False):
-        self.image = pygame.image.load(img_path).convert_alpha()
-        self.bulletimage = pygame.image.load("images/bullet.png").convert_alpha()
-        self.x = random.randint(20,380)    
-        self.y = random.randint(-2,0)
-        self.bulletx = self.x
-        self.bullety = self.y
-        self.steps = steps
-        self.enemyhealth = health
-        health = 3
-        self.bulletenemy = bullet_enemy
-        self.finalboss = finalboss
-        self.zigzag = zigzag
-        self.baby = baby
-  
-    # Refreshes enemies image and position every frame    
-    def image_blit(self,screen):
-        screen.blit(self.image, (self.x,self.y))
-    def movement(self):
-        
-        self.y += self.steps
-    def zigzag_movement(self):
-        
-        if self.x > 360:
-            self.y += 40
-            self.steps = self.steps *(-1)
-        if self.x < 0:
-            self.y += 40
-            self.steps = self.steps *(-1)
-        self.x += self.steps
-        return self.x, self.y
-
- 
-
-    # Enemy loses one health every time it gets hit by a bullet
-    def detection(self):
-
-        for bullet in bulletlist:
-            bullet.image_blit(screen)
-            bullet.movement()
-            for enemy in enemylist:
-                if enemy.x <= bullet.x <= enemy.x+40 and enemy.y <= bullet.y <= enemy.y+30:
-                    bulletlist.remove(bullet)
-                    enemy.enemyhealth -= 1
-                    if enemy.enemyhealth == 0:
-                        enemylist.remove(enemy)
-                        explosion_sound.play()
-        for big_bullet in big_bulletlist:
-            big_bullet.image_blit(screen)
-            big_bullet.movement()
-            for enemy in enemylist:
-                if enemy.x-50 <= big_bullet.x <= enemy.x+90 and enemy.y-50 <= big_bullet.y <= enemy.y+80:
-                    big_bulletlist.remove(bullet)
-                    enemy.enemyhealth -= 5
-                    if enemy.enemyhealth == 0:
-                        enemylist.remove(enemy)
-                        explosion_sound.play()
-                
-# Makes it possible to have multiple bullets at the same time                       
-class Bullet():
-    def __init__(self,playerx,playery,img = "images/bullet.png"):
-        self.image = pygame.image.load(img).convert_alpha()
-        self.speed = 7
-        self.x = playerx+playercenter
-        self.y = playery
-
-    def image_blit(self,screen):
-        screen.blit(self.image, (self.x,self.y))
-
-    def movement(self):
-        self.y -= self.speed
-
-class Big_bullet():
-
-    def __init__(self,playerx2,playery2,big_bullet_speed):
-        self.image = pygame.image.load("images/missile.png").convert_alpha()
-        self.speed = big_bullet_speed
-        self.x = playerx2+10
-        self.y = playery2
-      
-
-    def image_blit(self,screen):
-        screen.blit(self.image, (self.x,self.y))
-
-    def movement(self):
-        self.y -= self.speed
 
 class Loadout():
     def __init__(self,img_path = "images/loadout.png",gone = False,health = False,rapid_fire = False,launcher = False):
@@ -272,7 +174,7 @@ class Loadout():
             self.gone = True
             if self.collected_amount >= 5:
                 playerhealth2 += 2
-        return playerhealth,playerhealth2,loadoutsrn
+        return playerhealth,playerhealth2
     
     def loadout_rewards(self,big_bullet_speed,playerstep,cooldown,cooldown2):
         
@@ -298,7 +200,7 @@ class Loadout():
         
         if self.rapid_fire == True:
             
-            cooldown2 -= 400
+            cooldown2 -= 200
             if cooldown < 0:
                 cooldown = 0
             if cooldown2 < 100: 
@@ -393,7 +295,7 @@ while True:
                     cooldown = 400
                     if event.key == pygame.K_l or event.key == pygame.K_SPACE:
                     
-                        bullet = Bullet(playerx, playery)
+                        bullet = Bullet(playerx, playery,playercenter)
                         bulletlist.append(bullet)
                         shoot_sound.play()
                         last_shot_time = current_time
@@ -404,7 +306,7 @@ while True:
                     cooldown = 700
                     if event.key == pygame.K_l or event.key == pygame.K_SPACE:
                     
-                        bullet = Bullet(playerx, playery,"images/launcher_bullet.png")
+                        bullet = Bullet(playerx, playery,playercenter,"images/launcher_bullet.png")
                         bulletlist.append(bullet)
                         launcher.play()
                         last_shot_time = current_time
@@ -415,7 +317,7 @@ while True:
                 cooldown = 200
                 if current_time - last_shot_time >= cooldown:
                     shoot_sound.play()
-                    bullet = Bullet(playerx, playery)
+                    bullet = Bullet(playerx, playery,playercenter)
                     bulletlist.append(bullet)
                     last_shot_time = current_time
 
@@ -424,12 +326,12 @@ while True:
         if event.type == pygame.KEYDOWN:
             if current_time - last_shot_time2 >= cooldown2:
                 if event.key == pygame.K_e:
-                    big_bullet = Big_bullet(playerx2,playery2,big_bullet_speed)
-                    big_bulletlist.append(big_bullet)
+                    
+                    bulletlist.append(Bullet(playerx2,playery2,10, "images/missile.png",big_bullet_speed))
                     shoot_sound.play()
                     last_shot_time2 = current_time
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_c:
+            if event.key == pygame.K_m:
                 fire_mod_change.play()
                 mod += 1
                
@@ -449,7 +351,7 @@ while True:
         last_spawn_time = current_time
         current_wave += 1
         if current_wave % 10 == 0:
-            enemylist.append(Enemy("images/tmp.png", enemyhealth,True,0.5,False,False))
+            enemylist.append(Enemy("images/tmp.png", 5,True,0.5,False,False))
         if current_wave % 7 == 0 and zigzag_enemy == False:
             enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
             zigzag_enemy = True
@@ -487,6 +389,10 @@ while True:
             playerhealth -= 1
             if enemy.finalboss == False:
                 enemylist.remove(enemy)
+            if enemy.zigzag:
+                playerhealth -= 2
+            if enemy.bulletenemy:
+                playerhealth -= 1
            
     for enemy in enemylist:
         if (enemy.x < playerx2 + 50 and
@@ -496,6 +402,11 @@ while True:
             playerhealth2 -= 1
             if enemy.finalboss == False:
                 enemylist.remove(enemy)
+            if enemy.zigzag:
+                playerhealth -= 2
+            if enemy.bulletenemy:
+                playerhealth -= 1
+            
             
     if playerhealth == 0 or playerhealth2 == 0 and not game_status == "loss":
         game_status = "loss"
@@ -703,7 +614,7 @@ while True:
     for loadouts in loadout_list:
         
         loadouts.image_blit(screen)
-        playerhealth,playerhealth2,loadoutsrn = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2)
+        playerhealth,playerhealth2 = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2)
         loadoutsrn = loadouts.movement()
         if loadouts.gone == True:
             loadout_list.remove(loadouts)
