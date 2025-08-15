@@ -192,7 +192,42 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                 shoot_sound.play()
                 last_shot_time2 = current_time
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
-    
+
+class Buttons():
+    def __init__(self,replay,x,y):
+        self.image = pygame.image.load(replay).convert_alpha()
+        self.x = x
+        self.y = y
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x,y)
+    def screenblit(self,screen):
+        screen.blit(self.image,(self.rect.x,self.rect.y))
+    def detection(self,game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod):
+        pos = pygame.mouse.get_pos()
+        print(pos)
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                game_status = "ongoing"
+                current_wave = 0
+                player1_points = 0 
+                playerx = x // 2
+                playery = y - (y // 4)
+                playerx2 = x // 2
+                playery2 = y - (y // 4)
+                lo_collected = 0
+                if "rapid_fire" in fire_mods:
+                    fire_mods.remove("rapid_fire")
+                if "launcher" in fire_mods:
+                    fire_mods.remove("launcher")
+                current_fire_mod = "single_fire"
+        return game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod
+
+
+
+
+
+
+
 pygame.init()
 # Create frame
 screen = pygame.display.set_mode((x, y))
@@ -351,7 +386,10 @@ while True:
 
     if game_status == "loss":
         # Shows "WARZONE DEFEAT" text
-        screen.blit(text3, text3_rect)    
+        screen.blit(text3, text3_rect) 
+        replay = Buttons("images/try_again.png",x // 2 -150, 500)   
+        replay.screenblit(screen)
+        game_status,current_wave,player1_points,playerx,playerx2,playery,playery2,lo_collected,current_fire_mod = replay.detection(game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod)
     if game_status == "ongoing":
         # Draw player (needed so it still shows when no keys pressed)
         screen.blit(playerimage, (playerx, playery)) 
@@ -444,9 +482,7 @@ while True:
                             
                         if lo_spawn == 12 and not loadout_list:
                             loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
-                            loadout_inbound.play()
-                           
-                            
+                            loadout_inbound.play()                            
                 break
     
     hitboxx,hitboxy = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned)
@@ -455,16 +491,15 @@ while True:
         game_status = "win"
     enemyspawns,spawn_delay,enemyimage,enemyhealth = enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyhealth)
 
-    for loadouts in loadout_list:
-        
+    for loadouts in loadout_list:    
         loadouts.image_blit(screen)
-        playerhealth,playerhealth2 = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected)
+        playerhealth,playerhealth2,lo_collected = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected)
         loadoutsrn = loadouts.movement()
         if loadouts.gone == True:
             loadout_list.remove(loadouts)
             if loadouts.collected:
-                if loadouts.collected_amount >= 1:
-                    playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2 = loadouts.loadout_rewards(big_bullet_speed,playerstep,cooldown,cooldown2)
+                if lo_collected >= 1:
+                    playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2 = loadouts.loadout_rewards(big_bullet_speed,playerstep,cooldown,cooldown2,lo_collected)
                 if loadouts.rapid_fire:
                     if not "rapid_fire" in fire_mods:
                         fire_mods.append("rapid_fire")

@@ -88,7 +88,7 @@ class Loadout():
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
 
-    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected):
+    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected):
         
         if (self.x < playerx + 50 and 
             self.x + 40 > playerx and
@@ -104,7 +104,7 @@ class Loadout():
                 playerhealth += 2
                 health_lo_collected.play()
             elif not self.health:
-                self.collected_amount += 1
+                lo_collected += 1
                 if self.rapid_fire:
                     rapid_fire_collected.play()
                 elif self.launcher:
@@ -127,7 +127,7 @@ class Loadout():
                 health_lo_collected.play()
             elif not self.health:
                 loadout_collected.play()
-                self.collected_amount += 1
+                lo_collected += 1
             if self.rapid_fire:
                 rapid_fire_collected.play()
             elif self.launcher:
@@ -142,37 +142,30 @@ class Loadout():
             self.gone = True
             if self.collected_amount >= 5:
                 playerhealth2 += 2
-        return playerhealth,playerhealth2
+        return playerhealth,playerhealth2,lo_collected
     
-    def loadout_rewards(self,big_bullet_speed,playerstep,cooldown,cooldown2):
+    def loadout_rewards(self,big_bullet_speed,playerstep,cooldown,cooldown2,lo_collected):
         
         spaceship_img = "images/spaceship_upg1.png"
         playerimage = pygame.image.load(spaceship_img).convert_alpha()
         playercenter = 48
         cooldown = 325
         big_bullet_speed = 5
-        if self.collected_amount >= 2:
+        if lo_collected >= 2:
             cooldown = 200
             big_bullet_speed = 6
-        if self.collected_amount == 3:
+        if lo_collected == 3:
             playerstep = 7
             cooldown = 200
 
-        if 5 > self.collected_amount >= 4:
+        if 5 > lo_collected >= 4:
             playerstep = 9
             cooldown = 0
     
-        if self.collected_amount >= 5:
+        if lo_collected >= 5:
             playerstep = 10
             cooldown = 0
-        
-        if self.rapid_fire == True:
-            
-            cooldown2 -= 200
-            if cooldown < 0:
-                cooldown = 0
-            if cooldown2 < 100: 
-                cooldown2 = 100
+
             
             
             
