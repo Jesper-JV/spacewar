@@ -32,6 +32,9 @@ class Enemy():
         self.finalboss = finalboss
         self.zigzag = zigzag
         self.baby = baby
+        if self.finalboss == True:
+            self.x = 150
+            self.y = 1
   
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):

@@ -3,6 +3,7 @@ import random
 import sys
 import pdb
 from library import Enemy_bullet, Enemy, Bullet, Loadout
+import json
 
 loadoutx = random.randint(0,380)
 loadouty = -30
@@ -21,8 +22,7 @@ playerhealth2 = 5
 bosses_killed = 0
 bullet_damage = 1
 enemyimage = "images/enemy_green.png"
-with open("highscore.txt", "r") as f:
-    highscore = int(f.read())
+
 loadout_inbound_sound = False
 active = False
 hitboxx = 40 
@@ -45,10 +45,18 @@ boss_spawned = False # spawns boss once
 sound_played = False # plays sound once
 spawn_delay = 2000  # time in milliseconds between spawns
 last_spawn_time = pygame.time.get_ticks()  # current time
+# Lists
+bulletlist = []
+enemylist = []
+enemy_bullets = []
+loadout_list = []
+fire_mods = ["single_fire"]
+mod = 0
+current_fire_mod = fire_mods[mod]
 
 def player_movement(x,y,playerstep):
     # Handle movement on key press inside event loop
-    
+    keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
         x -= playerstep 
     if keys[pygame.K_RIGHT]:
@@ -91,17 +99,99 @@ def player_movement2(x2,y2):
     return x2,y2
 # Function to save highscore
 def update_highscore(player1_points):
-    with open("highscore.txt", "r") as f:
-        highscore = int(f.read())
-    if player1_points > highscore:
-        highscore = player1_points
-        with open("highscore.txt", "w") as f:
-            f.write(str(highscore))
+    
+        
+       
+
+    if player1_points > dictionary_highscore["highscore"]:
         username = input("what is your name? ")
         print(username)  
+        dictionary_highscore["username"] = username
+        dictionary_highscore["highscore"] = player1_points
+        with open("highscore.txt", "w") as f:
+            json.dump(dictionary_highscore,f)
         
+def enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyhealth):
 
             
+    # Difficulties depending on the players points
+    if 100 > player1_points >= 25:
+        enemyspawns = 3        
+    if 150 > player1_points >= 100:
+        enemyspawns = 5
+    if 250 > player1_points > 150:
+        spawn_delay = 1750
+        enemyspawns = 6
+        enemyimage = "images/enemy_red.png"
+    if 500 > player1_points > 250:
+        spawn_delay = 1500
+        enemyspawns = 8    
+    if 750 > player1_points >= 300:
+        enemyspawns = 10
+        enemyimage = "images/red_final .png"
+    if 1000 > player1_points > 500:
+        enemyhealth = 3
+        spawn_delay = 1000
+    if player1_points >= 1000:
+        enemyspawns = 15
+        spawn_delay = 500
+    return enemyspawns,spawn_delay,enemyimage,enemyhealth 
+
+def finalboss_spawn(hitboxx,hitboxy,final_boss_spawned):
+    if player1_points == 100 and not final_boss_spawned:
+        enemylist.append(Enemy("images/Final_boss.png",300,False,1,True,False))
+        final_boss_spawned = True        
+        for enemy in enemylist:
+            if enemy.finalboss == True:
+                hitboxx = 90
+                hitboxy = 200
+            elif enemy.finalboss == False:
+                hitboxx = 50
+                hitboxy = 40
+    return hitboxx,hitboxy   
+
+def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage):
+    if event.type == pygame.KEYDOWN:
+        if current_time - last_shot_time >= cooldown:
+            if current_fire_mod == "single_fire":
+                bullet_damage = 1
+                cooldown = 400
+                if event.key == pygame.K_l or event.key == pygame.K_SPACE:
+                
+                    bullet = Bullet(playerx, playery,playercenter)
+                    bulletlist.append(bullet)
+                    shoot_sound.play()
+                    last_shot_time = current_time
+    
+            if current_fire_mod == "launcher":
+                bullet_damage = 2
+                cooldown = 700
+                if event.key == pygame.K_l or event.key == pygame.K_SPACE:
+                
+                    bullet = Bullet(playerx, playery,playercenter,"images/launcher_bullet.png")
+                    bulletlist.append(bullet)
+                    launcher.play()
+                    last_shot_time = current_time
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE]:
+        if current_fire_mod == "rapid_fire":
+            bullet_damage = 1
+            cooldown = 200
+            if current_time - last_shot_time >= cooldown:
+                shoot_sound.play()
+                bullet = Bullet(playerx, playery,playercenter)
+                bulletlist.append(bullet)
+                last_shot_time = current_time
+
+    
+    if event.type == pygame.KEYDOWN:
+        if current_time - last_shot_time2 >= cooldown2:
+            if event.key == pygame.K_e:
+                
+                bulletlist.append(Bullet(playerx2,playery2,10, "images/missile.png",big_bullet_speed,True))
+                shoot_sound.play()
+                last_shot_time2 = current_time
+    return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
     
 pygame.init()
 # Create frame
@@ -125,7 +215,13 @@ color = color_passive
 # Text and color for text
 text1= font1.render('YOU WIN', True,green)
 text3= font3.render('WARZONE DEFEAT', True,red)
-highscore1 = highscore1.render('Highscore: ' + str(highscore), True,white)
+dictionary_highscore = {"username":"none","highscore":0}
+with open("highscore.txt", "r") as f:
+    dictionary_highscore = json.load(f)
+print(type(dictionary_highscore["highscore"]))
+
+highscore1 = highscore1.render(dictionary_highscore["username"] + " : " + str(dictionary_highscore["highscore"]), True,white)
+
 # Set center for text
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
@@ -152,15 +248,8 @@ playerx = x // 2
 playery = y - (y // 4)
 playerx2 = x // 2
 playery2 = y - (y // 4)
-# Lists
-bulletlist = []
-enemylist = []
-big_bulletlist = []
-enemy_bullets = []
-loadout_list = []
-fire_mods = ["single_fire"]
-mod = 0
-current_fire_mod = fire_mods[mod]
+
+
 # Main loop
 while True:
     # Cooldown and track if window is closed
@@ -170,48 +259,11 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if current_time - last_shot_time >= cooldown:
-                if current_fire_mod == "single_fire":
-                    bullet_damage = 1
-                    cooldown = 400
-                    if event.key == pygame.K_l or event.key == pygame.K_SPACE:
-                    
-                        bullet = Bullet(playerx, playery,playercenter)
-                        bulletlist.append(bullet)
-                        shoot_sound.play()
-                        last_shot_time = current_time
-        if event.type == pygame.KEYDOWN:
-            if current_time - last_shot_time >= cooldown:
-                if current_fire_mod == "launcher":
-                    bullet_damage = 2
-                    cooldown = 700
-                    if event.key == pygame.K_l or event.key == pygame.K_SPACE:
-                    
-                        bullet = Bullet(playerx, playery,playercenter,"images/launcher_bullet.png")
-                        bulletlist.append(bullet)
-                        launcher.play()
-                        last_shot_time = current_time
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
-            if current_fire_mod == "rapid_fire":
-                bullet_damage = 1
-                cooldown = 200
-                if current_time - last_shot_time >= cooldown:
-                    shoot_sound.play()
-                    bullet = Bullet(playerx, playery,playercenter)
-                    bulletlist.append(bullet)
-                    last_shot_time = current_time
-
-
+        bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,
+        cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage)
         
-        if event.type == pygame.KEYDOWN:
-            if current_time - last_shot_time2 >= cooldown2:
-                if event.key == pygame.K_e:
-                    
-                    bulletlist.append(Bullet(playerx2,playery2,10, "images/missile.png",big_bullet_speed,True))
-                    shoot_sound.play()
-                    last_shot_time2 = current_time
+        
+    
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_m:
                 fire_mod_change.play()
@@ -397,45 +449,11 @@ while True:
                             
                 break
     
-    if player1_points > 1000 and not final_boss_spawned:
-        enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
-        hitboxx = 90
-        hitboxy = 200
-        for enemy in enemylist:
-            if enemy.finalboss == True:
-                enemy.x = 150
-                enemy.y = -200
-                hitboxx = 90
-                hitboxy = 200
-                current_wave += 1
-                final_boss_spawned = True
-            elif enemy.finalboss == False:
-                hitboxx = 50
-                hitboxy = 40
+    hitboxx,hitboxy = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned)
  
     if final_boss_killed == True:
-        game_status = "win"        
-    # Difficulties depending on the players points
-    if 100 > player1_points >= 25:
-        enemyspawns = 3        
-    if 150 > player1_points >= 100:
-        enemyspawns = 5
-    if 250 > player1_points > 150:
-        spawn_delay = 1750
-        enemyspawns = 6
-        enemyimage = "images/enemy_red.png"
-    if 500 > player1_points > 250:
-        spawn_delay = 1500
-        enemyspawns = 8    
-    if 750 > player1_points >= 300:
-        enemyspawns = 10
-        enemyimage = "images/red_final .png"
-    if 1000 > player1_points > 500:
-        enemyhealth = 3
-        spawn_delay = 1000
-    if player1_points >= 1000:
-        enemyspawns = 15
-        spawn_delay = 500
+        game_status = "win"
+    enemyspawns,spawn_delay,enemyimage,enemyhealth = enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyhealth)
 
     for loadouts in loadout_list:
         
