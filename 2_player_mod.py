@@ -2,7 +2,7 @@ import pygame
 import random
 import sys
 import pdb
-from library import Enemy_bullet, Enemy, Bullet, Loadout
+from library import Enemy_bullet, Enemy, Bullet, Loadout, Buttons
 import json
 
 loadoutx = random.randint(0,380)
@@ -193,46 +193,6 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                 last_shot_time2 = current_time
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
 
-class Buttons():
-    def __init__(self,replay,x,y):
-        self.image = pygame.image.load(replay).convert_alpha()
-        self.x = x
-        self.y = y
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (x,y)
-    def screenblit(self,screen):
-        screen.blit(self.image,(self.rect.x,self.rect.y))
-    def detection(self,game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage):
-        pos = pygame.mouse.get_pos()
-        print(pos)
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "ongoing"
-                current_wave = 0
-                player1_points = 0 
-                playerx = x // 2
-                playery = y - (y // 4)
-                playerx2 = x // 2
-                playery2 = y - (y // 4)
-                lo_collected = 0
-                playerhealth2 = 5
-                playerhealth = 5
-                spaceship_img = "images/spaceship.png"
-                if "rapid_fire" in fire_mods:
-                    fire_mods.remove("rapid_fire")
-                if "launcher" in fire_mods:
-                    fire_mods.remove("launcher")
-                current_fire_mod = "single_fire"
-                for enemy in enemylist:
-                    enemylist.remove(enemy)
-                playerimage = pygame.image.load(spaceship_img).convert_alpha()
-        return game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage
-
-
-
-
-
-
 
 pygame.init()
 # Create frame
@@ -380,8 +340,7 @@ while True:
             if enemy.zigzag:
                 playerhealth -= 2
             if enemy.bulletenemy:
-                playerhealth -= 1
-            
+                playerhealth -= 1          
             
     if playerhealth == 0 or playerhealth2 == 0 and not game_status == "loss":
         game_status = "loss"
@@ -396,7 +355,7 @@ while True:
         replay = Buttons("images/try_again.png",x // 2 -150, 500)   
         replay.screenblit(screen)
         game_status,current_wave,player1_points,playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage = replay.detection(game_status, current_wave, player1_points
-        , playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage)
+        , playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods)
     if game_status == "ongoing":
         # Draw player (needed so it still shows when no keys pressed)
         
