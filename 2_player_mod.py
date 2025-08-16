@@ -2,13 +2,14 @@ import pygame
 import random
 import sys
 import pdb
-from library import Enemy_bullet, Enemy, Bullet, Loadout, Buttons
+from library import Enemy_bullet, Enemy, Bullet, Loadout, Buttons, Text
 import json
 
 loadoutx = random.randint(0,380)
 loadouty = -30
 playercenter = 24
 lo_collected = 0
+coins = 0
 playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
@@ -22,11 +23,10 @@ playerhealth2 = 5
 bosses_killed = 0
 bullet_damage = 1
 enemyimage = "images/enemy_green.png"
-
 loadout_inbound_sound = False
 active = False
 hitboxx = 40 
-game_status = "ongoing" 
+game_status = "menu" 
 spaceship_img = "images/spaceship.png" # player image
 spaceship_img2 = "images/spaceship2.png"
 loadoutsrn = False # makes it only one loadout on the screen
@@ -193,6 +193,17 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                 last_shot_time2 = current_time
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
 
+# class Text():
+#     def __init__(self,size,text,color,x,y):
+#         self.font = pygame.font.Font('freesansbold.ttf',size)
+#         self.text = self.font.render(str(text), True,color)
+#         self.text_rect = self.text.get_rect(center=(x,y))
+#     def image_blit(self,screen):
+#         screen.blit(self.text,self.text_rect)
+#     def refresh_text(self,text,color):
+#         self.text = self.font.render(str(text), True,color)
+
+
 
 pygame.init()
 # Create frame
@@ -202,6 +213,7 @@ pygame.display.set_caption("SPACEWAR VER 1.0.0")
 # Detect time
 clock = pygame.time.Clock()
 # Load text
+test_text = Text(20,20,white,x // 2,y // 2)
 font1 = pygame.font.Font('freesansbold.ttf', 50)
 font2 = pygame.font.Font('freesansbold.ttf', 20)
 font3 = pygame.font.Font('freesansbold.ttf', 40)
@@ -220,9 +232,7 @@ dictionary_highscore = {"username":"none","highscore":0}
 with open("highscore.txt", "r") as f:
     dictionary_highscore = json.load(f)
 print(type(dictionary_highscore["highscore"]))
-
 highscore1 = highscore1.render(dictionary_highscore["username"] + " : " + str(dictionary_highscore["highscore"]), True,white)
-
 # Set center for text
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
@@ -275,21 +285,22 @@ while True:
                 current_fire_mod = fire_mods[mod]
                 print(current_fire_mod)
 
-        
+      
     # Appends enemys every two seconds
-    if current_time - last_spawn_time > spawn_delay:
-        for i in range(enemyspawns):
-            enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False,False)) 
-            enemyx = enemy.x
-            enemyy = enemy.y
-            enemylist.append(enemy)
-        last_spawn_time = current_time
-        current_wave += 1
-        if current_wave % 10 == 0:
-            enemylist.append(Enemy("images/tmp.png", 5,True,0.5,False,False))
-        if current_wave % 7 == 0 and zigzag_enemy == False:
-            enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
-            zigzag_enemy = True
+    if game_status == "ongoing":
+        if current_time - last_spawn_time > spawn_delay:
+            for i in range(enemyspawns):
+                enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False,False)) 
+                enemyx = enemy.x
+                enemyy = enemy.y
+                enemylist.append(enemy)
+            last_spawn_time = current_time
+            current_wave += 1
+            if current_wave % 10 == 0:
+                enemylist.append(Enemy("images/tmp.png", 5,True,0.5,False,False))
+            if current_wave % 7 == 0 and zigzag_enemy == False:
+                enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
+                zigzag_enemy = True
 
     playerx,playery = player_movement(playerx,playery,playerstep)
     playerx2,playery2 = player_movement2(playerx2,playery2)
@@ -301,6 +312,8 @@ while True:
     screen.blit(background, (0, - scroll_y))
     screen.blit(background,(0,bg_height - scroll_y))
 
+ 
+
     text2 = font2.render("Points: " + str(player1_points),True,white)
     text4 = font4.render("PlayerTwo health: " + str(playerhealth2),True,white)
     playerhealth1_text = playerhealth1.render( "PlayerOne health: "+ str(playerhealth), True,white)
@@ -310,37 +323,41 @@ while True:
     waves_passed_text = waves_passed.render('Current wave: ' + str(current_wave), True,white) 
     waves_passed_text_rect = waves_passed_text.get_rect(center=(82,130))
     # Blits text
-    screen.blit(waves_passed_text, waves_passed_text_rect)
-    screen.blit(highscore1, highscore_rect)
-    screen.blit(text2, text2_rect)
-    screen.blit(playerhealth1_text, playerhealth1_text_rect)
-    screen.blit(text4, text4_rect)   
+    if game_status == "ongoing":
+        test_text.refresh_text(20,white)
+        test_text.image_blit(screen)
+        screen.blit(waves_passed_text, waves_passed_text_rect)
+        screen.blit(highscore1, highscore_rect)
+        screen.blit(text2, text2_rect)
+        screen.blit(playerhealth1_text, playerhealth1_text_rect)
+        screen.blit(text4, text4_rect)   
     #screen.blit(playerimage, (playerx, playery))
-    for enemy in enemylist:
-        if (enemy.x < playerx + 50 and
-            enemy.x + 40 > playerx and  
-            enemy.y < playery + 53 and  
-            enemy.y + 29 > playery):  
-            playerhealth -= 1
-            if enemy.finalboss == False:
-                enemylist.remove(enemy)
-            if enemy.zigzag:
-                playerhealth -= 2
-            if enemy.bulletenemy:
+    if game_status == "ongoing":
+        for enemy in enemylist:
+            if (enemy.x < playerx + 50 and
+                enemy.x + 40 > playerx and  
+                enemy.y < playery + 53 and  
+                enemy.y + 29 > playery):  
                 playerhealth -= 1
-           
-    for enemy in enemylist:
-        if (enemy.x < playerx2 + 50 and
-            enemy.x + 40 > playerx2 and  
-            enemy.y < playery2 + 53 and  
-            enemy.y + 29 > playery2):  
-            playerhealth2 -= 1
-            if enemy.finalboss == False:
-                enemylist.remove(enemy)
-            if enemy.zigzag:
-                playerhealth -= 2
-            if enemy.bulletenemy:
-                playerhealth -= 1          
+                if enemy.finalboss == False:
+                    enemylist.remove(enemy)
+                if enemy.zigzag:
+                    playerhealth -= 2
+                if enemy.bulletenemy:
+                    playerhealth -= 1
+            
+        for enemy in enemylist:
+            if (enemy.x < playerx2 + 50 and
+                enemy.x + 40 > playerx2 and  
+                enemy.y < playery2 + 53 and  
+                enemy.y + 29 > playery2):  
+                playerhealth2 -= 1
+                if enemy.finalboss == False:
+                    enemylist.remove(enemy)
+                if enemy.zigzag:
+                    playerhealth -= 2
+                if enemy.bulletenemy:
+                    playerhealth -= 1          
             
     if playerhealth == 0 or playerhealth2 == 0 and not game_status == "loss":
         game_status = "loss"
@@ -358,99 +375,109 @@ while True:
         , playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods)
     if game_status == "ongoing":
         # Draw player (needed so it still shows when no keys pressed)
-        
+ 
+
         screen.blit(playerimage, (playerx, playery)) 
         screen.blit(playerimage2, (playerx2, playery2))
+
     if game_status == "win":
         # Refreshes "YOU WIN" text
         screen.blit(text1, text1_rect)
-
+    if game_status == "menu":
+        start_game = Buttons("images/play.png",x // 2 -100, 300)
+        start_game.screenblit(screen)
+        game_status = start_game.start_detection(game_status)
+    if game_status == "shop":
+        pass
     # Update enemy
-    for enemy in enemylist:    
-        enemy.image_blit(screen)
-        if enemy.zigzag == False:
-            enemy.movement()
-        if enemy.zigzag == True:
-            zigzagx,zigzagy = enemy.zigzag_movement()   
-        if enemy.y > 700:
-            enemylist.remove(enemy)  
-        if enemy.bulletenemy :
-            if enemy.bulletenemy and enemy.y > 0:
-                bullet_chance = random.randint(1,100)
-                if bullet_chance == 2: 
-                    bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
-                    enemy_bullets.append(bullet)
+    if game_status == "ongoing":
+        for enemy in enemylist:    
+            enemy.image_blit(screen)
+            if enemy.zigzag == False:
+                enemy.movement()
+            if enemy.zigzag == True:
+                zigzagx,zigzagy = enemy.zigzag_movement()   
+            if enemy.y > 700:
+                enemylist.remove(enemy)  
+            if enemy.bulletenemy :
+                if enemy.bulletenemy and enemy.y > 0:
+                    bullet_chance = random.randint(1,100)
+                    if bullet_chance == 2: 
+                        bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
+                        enemy_bullets.append(bullet)
+    if game_status == "ongoing":    
+        for enemy_bullet in enemy_bullets:
+            enemy_bullet.movement()
+            enemy_bullet.image_blit(screen)
+            if enemy_bullet.y > 700:
+                enemy_bullets.remove(enemy_bullet)
         
-    for enemy_bullet in enemy_bullets:
-        enemy_bullet.movement()
-        enemy_bullet.image_blit(screen)
-        if enemy_bullet.y > 700:
-            enemy_bullets.remove(enemy_bullet)
-    
-    for enemy_bullet in enemy_bullets:
-        if playerx <= enemy_bullet.x <= playerx+50 and playery <= enemy_bullet.y <= playery+50:
-            playerhealth -= 1
-            enemy_bullets.remove(enemy_bullet)
+        for enemy_bullet in enemy_bullets:
+            if playerx <= enemy_bullet.x <= playerx+50 and playery <= enemy_bullet.y <= playery+50:
+                playerhealth -= 1
+                enemy_bullets.remove(enemy_bullet)
 
-    for enemy_bullet in enemy_bullets:
-        if playerx2 <= enemy_bullet.x <= playerx2+50 and playery2 <= enemy_bullet.y <= playery2+50:
-            playerhealth2 -= 1
-            enemy_bullets.remove(enemy_bullet)
-    # Deletes bullet after it is out of screen     
-    for bullet in bulletlist:
-        bullet.image_blit(screen)
-        bullet.movement()
-        if bullet.y <0:
-            bulletlist.remove(bullet)
-            continue
-        for enemy in enemylist:
-            if enemy.finalboss == False:
-                hitboxx = 40
-                hitboxy = 40
-            else:
-                hitboxx = 200
-                hitboxy =432
-            if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
+        for enemy_bullet in enemy_bullets:
+            if playerx2 <= enemy_bullet.x <= playerx2+50 and playery2 <= enemy_bullet.y <= playery2+50:
+                playerhealth2 -= 1
+                enemy_bullets.remove(enemy_bullet)
+    # Deletes bullet after it is out of screen   
+    if game_status == "ongoing":  
+        for bullet in bulletlist:
+            bullet.image_blit(screen)
+            bullet.movement()
+            if bullet.y <0:
                 bulletlist.remove(bullet)
-                if bullet.big_bullet == True:
-                    enemy.enemyhealth -= 5
+                continue
+            for enemy in enemylist:
+                if enemy.finalboss == False:
+                    hitboxx = 40
+                    hitboxy = 40
                 else:
-                    enemy.enemyhealth -= bullet_damage
-
-                if enemy.enemyhealth <= 0:
-                    enemylist.remove(enemy)                    
-                    if enemy.finalboss == True:
-                        game_status = "win"
-                        player1_points += 100
-                        update_highscore(player1_points)
-                        win_sound.play() 
-                        final_boss_killed = True 
-                        hitboxx = 200
-                        hitboxy = 432   
-                    if enemy.zigzag == True:
-                        zigzag_enemy = False                 
+                    hitboxx = 200
+                    hitboxy =432
+                if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
+                    bulletlist.remove(bullet)
+                    if bullet.big_bullet == True:
+                        enemy.enemyhealth -= 5
                     else:
-                        explosion_sound.play()
-                        player1_points += 1
-                        lo_spawn = random.choice([7,5,10,12])
-                        #makes it a chance for loadout every time you kill an enemy
-                        if lo_spawn == 7 and len(loadout_list) == 0:
-                            loadout = Loadout("images/loadout.png")
-                            loadout_list.append(loadout)
-                            loadout_inbound.play()
-                                    
-                            lo_spawn = 8
-                        if lo_spawn == 10 and len(loadout_list) == 0:
-                            loadout_list.append(Loadout("images/loadout_heart.png",False,True))
-                            loadout_inbound.play()
-                        if lo_spawn == 5 and not loadout_list:
-                            loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
-                            loadout_inbound.play()
-                            
-                        if lo_spawn == 12 and not loadout_list:
-                            loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
-                            loadout_inbound.play()                            
-                break
+                        enemy.enemyhealth -= bullet_damage
+
+                    if enemy.enemyhealth <= 0:
+                        enemylist.remove(enemy) 
+                        coins += 1                   
+                        if enemy.finalboss == True:
+                            game_status = "win"
+                            player1_points += 100
+                            update_highscore(player1_points)
+                            win_sound.play() 
+                            final_boss_killed = True 
+                            hitboxx = 200
+                            hitboxy = 432   
+                        if enemy.zigzag == True:
+                            zigzag_enemy = False                 
+                        else:
+                            explosion_sound.play()
+                            player1_points += 1
+                            lo_spawn = random.choice([7,5,10,12])
+                            #makes it a chance for loadout every time you kill an enemy
+                            if lo_spawn == 7 and len(loadout_list) == 0:
+                                loadout = Loadout("images/loadout.png")
+                                loadout_list.append(loadout)
+                                loadout_inbound.play()
+                                        
+                                lo_spawn = 8
+                            if lo_spawn == 10 and len(loadout_list) == 0:
+                                loadout_list.append(Loadout("images/loadout_heart.png",False,True))
+                                loadout_inbound.play()
+                            if lo_spawn == 5 and not loadout_list:
+                                loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
+                                loadout_inbound.play()
+                                
+                            if lo_spawn == 12 and not loadout_list:
+                                loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
+                                loadout_inbound.play()                            
+                    break
     
     hitboxx,hitboxy = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned)
  

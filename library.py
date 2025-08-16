@@ -211,5 +211,22 @@ class Buttons():
                     enemylist.remove(enemy)
                 playerimage = pygame.image.load(spaceship_img).convert_alpha()
         return game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage
+    def start_detection(self,game_status):
+        pos = pygame.mouse.get_pos()
+        print(pos)
+        if self.rect.collidepoint(pos):  
+            if pygame.mouse.get_pressed()[0] == 1:
+                game_status = "ongoing"   
+        return game_status 
+    
+class Text():
+    def __init__(self,size,text,color,x,y):
+        self.font = pygame.font.Font('freesansbold.ttf',size)
+        self.text = self.font.render(str(text), True,color)
+        self.text_rect = self.text.get_rect(center=(x,y))
+    def image_blit(self,screen):
+        screen.blit(self.text,self.text_rect)
+    def refresh_text(self,text,color):
+        self.text = self.font.render(str(text), True,color)
 
    

@@ -1,1 +1,1 @@
-{"username": "Jesper", "highscore": 8}
+{"username": "Jesper", "highscore": 8, "coins": 0}
