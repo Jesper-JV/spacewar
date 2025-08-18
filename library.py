@@ -1,8 +1,6 @@
 import pygame
 import random
 
-
-
 class Enemy_bullet():
     def __init__(self,enemyx,enemyy):
         self.image = pygame.image.load("images/bullet.png").convert_alpha()
@@ -45,16 +43,13 @@ class Enemy():
     def zigzag_movement(self):
         
         if self.x > 360:
-            self.y += 40
             self.steps = self.steps *(-1)
+            self.y += 40
         if self.x < 0:
-            self.y += 40
             self.steps = self.steps *(-1)
+            self.y += 40
         self.x += self.steps
         return self.x, self.y
-
- 
-
     
 class Bullet():
     def __init__(self,playerx,playery,playercenter,img = "images/bullet.png",speed = 7,big_bullet = False):
@@ -213,15 +208,27 @@ class Buttons():
         return game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage
     def start_detection(self,game_status):
         pos = pygame.mouse.get_pos()
-        print(pos)
+        
         if self.rect.collidepoint(pos):  
             if pygame.mouse.get_pressed()[0] == 1:
                 game_status = "ongoing"   
         return game_status 
-    
+    def menu_detection(self,game_status):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                game_status = "menu"   
+        return game_status
+    def shop_detection(self,game_status):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                game_status = "shop"   
+        return game_status
+
 class Text():
-    def __init__(self,size,text,color,x,y):
-        self.font = pygame.font.Font('freesansbold.ttf',size)
+    def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
+        self.font = pygame.font.SysFont(font,size)
         self.text = self.font.render(str(text), True,color)
         self.text_rect = self.text.get_rect(center=(x,y))
     def image_blit(self,screen):

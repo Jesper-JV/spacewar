@@ -14,7 +14,7 @@ playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
 playerhealth = 5
-current_wave = 1
+current_wave = 0
 big_bullet_speed = 2
 final_boss_spawned = False
 final_boss_killed = False
@@ -98,11 +98,7 @@ def player_movement2(x2,y2):
         y2 = 100
     return x2,y2
 # Function to save highscore
-def update_highscore(player1_points):
-    
-        
-       
-
+def update_highscore(player1_points):      
     if player1_points > dictionary_highscore["highscore"]:
         username = input("what is your name? ")
         print(username)  
@@ -193,18 +189,6 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                 last_shot_time2 = current_time
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
 
-# class Text():
-#     def __init__(self,size,text,color,x,y):
-#         self.font = pygame.font.Font('freesansbold.ttf',size)
-#         self.text = self.font.render(str(text), True,color)
-#         self.text_rect = self.text.get_rect(center=(x,y))
-#     def image_blit(self,screen):
-#         screen.blit(self.text,self.text_rect)
-#     def refresh_text(self,text,color):
-#         self.text = self.font.render(str(text), True,color)
-
-
-
 pygame.init()
 # Create frame
 screen = pygame.display.set_mode((x, y))
@@ -213,7 +197,6 @@ pygame.display.set_caption("SPACEWAR VER 1.0.0")
 # Detect time
 clock = pygame.time.Clock()
 # Load text
-test_text = Text(20,20,white,x // 2,y // 2)
 font1 = pygame.font.Font('freesansbold.ttf', 50)
 font2 = pygame.font.Font('freesansbold.ttf', 20)
 font3 = pygame.font.Font('freesansbold.ttf', 40)
@@ -231,18 +214,20 @@ text3= font3.render('WARZONE DEFEAT', True,red)
 dictionary_highscore = {"username":"none","highscore":0}
 with open("highscore.txt", "r") as f:
     dictionary_highscore = json.load(f)
-print(type(dictionary_highscore["highscore"]))
 highscore1 = highscore1.render(dictionary_highscore["username"] + " : " + str(dictionary_highscore["highscore"]), True,white)
 # Set center for text
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
 highscore_rect = highscore1.get_rect(center=(310,30))
 # Load images
+space = Text(100,"SPACE",green,200,100,'comicsansms')
+war = Text(65,"WAR",green,200,180,'comicsansms')
 background = pygame.image.load("images/bg.jpg").convert()
 bg_height = background.get_height()
 scroll_y = 0
 playerimage = pygame.image.load(spaceship_img).convert_alpha()
 playerimage2 = pygame.image.load(spaceship_img2).convert_alpha()
+shop = pygame.image.load("images/shop.jpg").convert_alpha()
 # Load sounds
 shoot_sound = pygame.mixer.Sound("sounds/shoot.wav")
 lose_sound = pygame.mixer.Sound("sounds/lose_sound.wav")
@@ -254,6 +239,10 @@ health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
 rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
 fire_mod_change = pygame.mixer.Sound("sounds/fire_mod_change.wav")
 launcher = pygame.mixer.Sound("sounds/launcher.wav")
+pygame.mixer.music.load("sounds/menu_sound.mp3")
+pygame.mixer.music.set_volume(0.4)
+pygame.mixer.music.get_busy()
+
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
@@ -272,9 +261,7 @@ while True:
             sys.exit()
         bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,
         cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage)
-        
-        
-    
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_m:
                 fire_mod_change.play()
@@ -324,8 +311,6 @@ while True:
     waves_passed_text_rect = waves_passed_text.get_rect(center=(82,130))
     # Blits text
     if game_status == "ongoing":
-        test_text.refresh_text(20,white)
-        test_text.image_blit(screen)
         screen.blit(waves_passed_text, waves_passed_text_rect)
         screen.blit(highscore1, highscore_rect)
         screen.blit(text2, text2_rect)
@@ -369,26 +354,38 @@ while True:
     if game_status == "loss":
         # Shows "WARZONE DEFEAT" text
         screen.blit(text3, text3_rect) 
-        replay = Buttons("images/try_again.png",x // 2 -150, 500)   
+        replay = Buttons("images/try_again.png",x // 2 -150, 400)  
+        enter_menu = Buttons("images/menu.png", 5, 10) 
         replay.screenblit(screen)
         game_status,current_wave,player1_points,playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage = replay.detection(game_status, current_wave, player1_points
         , playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods)
+        game_status = enter_menu.menu_detection(game_status)
+        enter_menu.screenblit(screen)
     if game_status == "ongoing":
         # Draw player (needed so it still shows when no keys pressed)
- 
-
         screen.blit(playerimage, (playerx, playery)) 
         screen.blit(playerimage2, (playerx2, playery2))
-
+        pygame.mixer.music.fadeout(3000)
     if game_status == "win":
-        # Refreshes "YOU WIN" text
         screen.blit(text1, text1_rect)
     if game_status == "menu":
+        space.image_blit(screen)
+        war.image_blit(screen)
         start_game = Buttons("images/play.png",x // 2 -100, 300)
-        start_game.screenblit(screen)
+        enter_shop = Buttons("images/shop.png",x // 2 -100, 400)
         game_status = start_game.start_detection(game_status)
+        game_status = enter_shop.shop_detection(game_status)
+        start_game.screenblit(screen)
+        enter_shop.screenblit(screen)
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play(-1)
+     
+ 
     if game_status == "shop":
-        pass
+        screen.blit(shop,(0,0))
+        quit_shop = Buttons("images/quit_button.png",10, 10)
+        game_status = quit_shop.menu_detection(game_status)
+        quit_shop.screenblit(screen)
     # Update enemy
     if game_status == "ongoing":
         for enemy in enemylist:    
@@ -421,8 +418,7 @@ while True:
             if playerx2 <= enemy_bullet.x <= playerx2+50 and playery2 <= enemy_bullet.y <= playery2+50:
                 playerhealth2 -= 1
                 enemy_bullets.remove(enemy_bullet)
-    # Deletes bullet after it is out of screen   
-    if game_status == "ongoing":  
+    # Deletes bullet after it is out of screen    
         for bullet in bulletlist:
             bullet.image_blit(screen)
             bullet.movement()
