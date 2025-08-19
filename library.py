@@ -32,7 +32,7 @@ class Enemy():
         self.baby = baby
         if self.finalboss == True:
             self.x = 150
-            self.y = 1
+            self.y = -400
   
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
@@ -229,7 +229,7 @@ class Buttons():
 class Text():
     def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
         self.font = pygame.font.SysFont(font,size)
-        self.text = self.font.render(str(text), True,color)
+        self.text = self.font.render(text, True,color)
         self.text_rect = self.text.get_rect(center=(x,y))
     def image_blit(self,screen):
         screen.blit(self.text,self.text_rect)

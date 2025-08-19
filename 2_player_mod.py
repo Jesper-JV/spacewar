@@ -4,7 +4,7 @@ import sys
 import pdb
 from library import Enemy_bullet, Enemy, Bullet, Loadout, Buttons, Text
 import json
-
+d = 0
 loadoutx = random.randint(0,380)
 loadouty = -30
 playercenter = 24
@@ -35,6 +35,7 @@ hitboxy = 30 # hitbox (y) for enemy(s)
 green = (0,255,0) # color code for green
 white = (255,255,255) # color code for white
 red = (255,0,0) # color code for red
+yellow = (255,215,0)
 x = 400 # width of the frame
 y = 700 # height of the frame
 last_shot_time = 0 # last
@@ -98,14 +99,21 @@ def player_movement2(x2,y2):
         y2 = 100
     return x2,y2
 # Function to save highscore
-def update_highscore(player1_points):      
+def update_highscore(player1_points,coins,dictionary_highscore):  
+    dictionary_highscore["coins"] += coins    
     if player1_points > dictionary_highscore["highscore"]:
         username = input("what is your name? ")
         print(username)  
         dictionary_highscore["username"] = username
         dictionary_highscore["highscore"] = player1_points
-        with open("highscore.txt", "w") as f:
-            json.dump(dictionary_highscore,f)
+    with open("highscore.txt", "w") as f:
+        json.dump(dictionary_highscore,f)
+    return dictionary_highscore
+
+def save_coins():
+
+    with open("highscore.txt", "w") as f:
+        json.dump(dictionary_highscore,f)
         
 def enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyhealth):
 
@@ -133,18 +141,15 @@ def enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyheal
         spawn_delay = 500
     return enemyspawns,spawn_delay,enemyimage,enemyhealth 
 
-def finalboss_spawn(hitboxx,hitboxy,final_boss_spawned):
-    if player1_points == 100 and not final_boss_spawned:
-        enemylist.append(Enemy("images/Final_boss.png",300,False,1,True,False))
+def finalboss_spawn(hitboxx,hitboxy,final_boss_spawned,player1_points):
+    if player1_points == 100 and final_boss_spawned == False:
+        enemylist.append(Enemy("images/Final_boss.png",300,False,0.2,True,False))
         final_boss_spawned = True        
-        for enemy in enemylist:
-            if enemy.finalboss == True:
-                hitboxx = 90
-                hitboxy = 200
-            elif enemy.finalboss == False:
-                hitboxx = 50
-                hitboxy = 40
-    return hitboxx,hitboxy   
+      
+        pygame.mixer.music.load("sounds/boss.mp3")
+        pygame.mixer.music.set_volume(1.0)
+        pygame.mixer.music.play()
+    return hitboxx,hitboxy,final_boss_spawned
 
 def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage):
     if event.type == pygame.KEYDOWN:
@@ -190,6 +195,7 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
 
 pygame.init()
+
 # Create frame
 screen = pygame.display.set_mode((x, y))
 # Set caption
@@ -211,10 +217,11 @@ color = color_passive
 # Text and color for text
 text1= font1.render('YOU WIN', True,green)
 text3= font3.render('WARZONE DEFEAT', True,red)
-dictionary_highscore = {"username":"none","highscore":0}
+dictionary_highscore = {"username":"none","highscore":0,"coins":0}
 with open("highscore.txt", "r") as f:
     dictionary_highscore = json.load(f)
 highscore1 = highscore1.render(dictionary_highscore["username"] + " : " + str(dictionary_highscore["highscore"]), True,white)
+
 # Set center for text
 text1_rect = text1.get_rect(center=(x // 2, y // 2))
 text3_rect = text3.get_rect(center=(x // 2, y // 2))
@@ -222,7 +229,9 @@ highscore_rect = highscore1.get_rect(center=(310,30))
 # Load images
 space = Text(100,"SPACE",green,200,100,'comicsansms')
 war = Text(65,"WAR",green,200,180,'comicsansms')
+total_coins = Text(30,"Coins: "+str(dictionary_highscore["coins"]),yellow,340,30)
 background = pygame.image.load("images/bg.jpg").convert()
+
 bg_height = background.get_height()
 scroll_y = 0
 playerimage = pygame.image.load(spaceship_img).convert_alpha()
@@ -239,9 +248,10 @@ health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
 rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
 fire_mod_change = pygame.mixer.Sound("sounds/fire_mod_change.wav")
 launcher = pygame.mixer.Sound("sounds/launcher.wav")
+
 pygame.mixer.music.load("sounds/menu_sound.mp3")
 pygame.mixer.music.set_volume(0.4)
-pygame.mixer.music.get_busy()
+
 
 # Initial positions
 playerx = x // 2
@@ -259,9 +269,10 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,
-        cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage)
+        if game_status == "ongoing":
 
+            bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,
+            cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_m:
                 fire_mod_change.play()
@@ -272,7 +283,8 @@ while True:
                 current_fire_mod = fire_mods[mod]
                 print(current_fire_mod)
 
-      
+
+
     # Appends enemys every two seconds
     if game_status == "ongoing":
         if current_time - last_spawn_time > spawn_delay:
@@ -344,9 +356,9 @@ while True:
                 if enemy.bulletenemy:
                     playerhealth -= 1          
             
-    if playerhealth == 0 or playerhealth2 == 0 and not game_status == "loss":
+    if playerhealth == 0 or playerhealth2 == 0:
         game_status = "loss"
-        update_highscore(player1_points)
+        dictionary_highscore = update_highscore(player1_points,coins,dictionary_highscore)
         lose_sound.play()
         playerhealth -= 1
         playerhealth2 -= 1
@@ -361,12 +373,16 @@ while True:
         , playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods)
         game_status = enter_menu.menu_detection(game_status)
         enter_menu.screenblit(screen)
+
     if game_status == "ongoing":
         # Draw player (needed so it still shows when no keys pressed)
         screen.blit(playerimage, (playerx, playery)) 
         screen.blit(playerimage2, (playerx2, playery2))
-        pygame.mixer.music.fadeout(3000)
+        if not final_boss_spawned:
+
+            pygame.mixer.music.fadeout(3000)
     if game_status == "win":
+        pygame.mixer.music.stop()
         screen.blit(text1, text1_rect)
     if game_status == "menu":
         space.image_blit(screen)
@@ -380,12 +396,20 @@ while True:
         if not pygame.mixer.music.get_busy():
             pygame.mixer.music.play(-1)
      
- 
+    
     if game_status == "shop":
+     
         screen.blit(shop,(0,0))
         quit_shop = Buttons("images/quit_button.png",10, 10)
         game_status = quit_shop.menu_detection(game_status)
         quit_shop.screenblit(screen)
+        total_coins.image_blit(screen)
+        total_coins.refresh_text("Coins: "+str(dictionary_highscore["coins"]),yellow)
+       
+        save_coins()
+                    
+               
+        
     # Update enemy
     if game_status == "ongoing":
         for enemy in enemylist:    
@@ -441,7 +465,8 @@ while True:
 
                     if enemy.enemyhealth <= 0:
                         enemylist.remove(enemy) 
-                        coins += 1                   
+                        coins += 1  
+                                      
                         if enemy.finalboss == True:
                             game_status = "win"
                             player1_points += 100
@@ -475,7 +500,7 @@ while True:
                                 loadout_inbound.play()                            
                     break
     
-    hitboxx,hitboxy = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned)
+    hitboxx,hitboxy,final_boss_spawned = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned,player1_points)
  
     if final_boss_killed == True:
         game_status = "win"
