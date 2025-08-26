@@ -4,7 +4,7 @@ import sys
 import pdb
 from library import Enemy_bullet, Enemy, Bullet, Loadout, Buttons, Text
 import json
-d = 0
+
 loadoutx = random.randint(0,380)
 loadouty = -30
 playercenter = 24
@@ -13,6 +13,7 @@ coins = 0
 playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
+shop_page = 1
 playerhealth = 5
 current_wave = 0
 big_bullet_speed = 2
@@ -40,17 +41,22 @@ x = 400 # width of the frame
 y = 700 # height of the frame
 last_shot_time = 0 # last
 last_shot_time2 = 0
+
 cooldown = 400 # cooldown between bullets
 cooldown2 = 1500
 boss_spawned = False # spawns boss once
 sound_played = False # plays sound once
 spawn_delay = 2000  # time in milliseconds between spawns
 last_spawn_time = pygame.time.get_ticks()  # current time
+last_change_time = pygame.time.get_ticks()
+
+page_cooldown = 400
 # Lists
 bulletlist = []
 enemylist = []
 enemy_bullets = []
 loadout_list = []
+spaceships = []
 fire_mods = ["single_fire"]
 mod = 0
 current_fire_mod = fire_mods[mod]
@@ -194,6 +200,11 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                 last_shot_time2 = current_time
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
 
+
+
+  
+                
+           
 pygame.init()
 
 # Create frame
@@ -251,8 +262,8 @@ launcher = pygame.mixer.Sound("sounds/launcher.wav")
 
 pygame.mixer.music.load("sounds/menu_sound.mp3")
 pygame.mixer.music.set_volume(0.4)
-
-
+quit_shop = Buttons("images/quit_button.png",10, 10)
+change_page = Buttons("images/change_page.png",180,665)
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
@@ -264,15 +275,19 @@ playery2 = y - (y // 4)
 while True:
     # Cooldown and track if window is closed
     current_time = pygame.time.get_ticks()
+    current_time_page = pygame.time.get_ticks()
     for event in pygame.event.get():
-        # print(pygame.event.event_name(event.type))
+
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         if game_status == "ongoing":
 
             bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,
-            cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage)
+            cooldown,current_time,current_fire_mod,shoot_sound,
+            playercenter,playerx,playery,
+            launcher,playerx2,playery2,
+            big_bullet_speed,last_shot_time2,cooldown2,bullet_damage)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_m:
                 fire_mod_change.play()
@@ -370,7 +385,10 @@ while True:
         enter_menu = Buttons("images/menu.png", 5, 10) 
         replay.screenblit(screen)
         game_status,current_wave,player1_points,playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage = replay.detection(game_status, current_wave, player1_points
-        , playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods)
+        , playerx,playerx2,playery,
+        playery2,lo_collected,current_fire_mod,playerhealth
+        ,playerhealth2,spaceship_img,
+        playerimage,enemylist,fire_mods)
         game_status = enter_menu.menu_detection(game_status)
         enter_menu.screenblit(screen)
 
@@ -390,7 +408,7 @@ while True:
         start_game = Buttons("images/play.png",x // 2 -100, 300)
         enter_shop = Buttons("images/shop.png",x // 2 -100, 400)
         game_status = start_game.start_detection(game_status)
-        game_status = enter_shop.shop_detection(game_status)
+        game_status,shop_page = enter_shop.shop_detection(game_status,shop_page)
         start_game.screenblit(screen)
         enter_shop.screenblit(screen)
         if not pygame.mixer.music.get_busy():
@@ -398,15 +416,18 @@ while True:
      
     
     if game_status == "shop":
-     
+        
         screen.blit(shop,(0,0))
-        quit_shop = Buttons("images/quit_button.png",10, 10)
+        change_page.screenblit(screen)
         game_status = quit_shop.menu_detection(game_status)
         quit_shop.screenblit(screen)
         total_coins.image_blit(screen)
         total_coins.refresh_text("Coins: "+str(dictionary_highscore["coins"]),yellow)
-       
+        shop_page = change_page.change_page(shop_page)
         save_coins()
+      
+
+
                     
                
         

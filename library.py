@@ -173,12 +173,13 @@ class Loadout():
             self.gone = True
             
 class Buttons():
-    def __init__(self,replay,x,y):
-        self.image = pygame.image.load(replay).convert_alpha()
+    def __init__(self,img,x,y,purchase_number = 9999):
+        self.image = pygame.image.load(img).convert_alpha()
         self.x = x
         self.y = y
         self.rect = self.image.get_rect()
         self.rect.topleft = (x,y)
+        self.purchase_number = purchase_number
     def screenblit(self,screen):
         screen.blit(self.image,(self.rect.x,self.rect.y))
     def detection(self,game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods):
@@ -219,12 +220,46 @@ class Buttons():
             if pygame.mouse.get_pressed()[0] == 1:
                 game_status = "menu"   
         return game_status
-    def shop_detection(self,game_status):
+    def shop_detection(self,game_status,shop_page):
         pos = pygame.mouse.get_pos() 
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "shop"   
-        return game_status
+                game_status = "shop" 
+                shop_page = 1  
+        return game_status,shop_page
+
+    def buy_items(self,spaceship_list,coins):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                if self.purchase_number == 1 and coins >= 50:
+                    spaceship_list.append("images/spaceship_num1")
+                    coins -= 50
+                if self.purchase_number == 2 and coins >= 100:
+                    spaceship_list.append("images/spaceship_num2")
+                    coins -= 100
+                if self.purchase_number == 3 and coins >= 150:
+                    spaceship_list.append("images/spaceship_num3")
+                    coins -= 150
+    def change_page(self,page):
+        
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1: 
+                if page == 1:  
+                    page = 2
+                elif page == 2:  
+                    page = 3
+                elif page == 3:  
+                    page = 4
+                elif page == 4:  
+                    page = 1
+                print(page)
+            
+        return page
+                
+
+
 
 class Text():
     def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
@@ -235,5 +270,6 @@ class Text():
         screen.blit(self.text,self.text_rect)
     def refresh_text(self,text,color):
         self.text = self.font.render(str(text), True,color)
+
 
    
