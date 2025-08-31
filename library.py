@@ -5,11 +5,12 @@ class Enemy_bullet():
     def __init__(self,enemyx,enemyy):
         self.image = pygame.image.load("images/bullet.png").convert_alpha()
         self.speed = -7
-        
+        self.rect = self.image.get_rect()
         self.x = enemyx + 5
         self.y = enemyy + 5
 
     def image_blit(self,screen):
+        self.rect.topleft = (self.x,self.y)
         screen.blit(self.image, (self.x,self.y))
 
     def movement(self):
@@ -21,6 +22,7 @@ class Enemy():
         self.bulletimage = pygame.image.load("images/bullet.png").convert_alpha()
         self.x = random.randint(20,380)    
         self.y = random.randint(-2,0)
+        self.rect = self.image.get_rect()
         self.bulletx = self.x
         self.bullety = self.y
         self.steps = steps
@@ -37,8 +39,9 @@ class Enemy():
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
-    def movement(self):
-        
+    def movement(self,screen):
+        self.rect.topleft = (self.x,self.y)   
+    
         self.y += self.steps
     def zigzag_movement(self):
         
@@ -58,16 +61,21 @@ class Bullet():
         self.x = playerx+playercenter
         self.y = playery
         self.big_bullet = big_bullet
+        self.rect = self.image.get_rect()
 
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
 
-    def movement(self):
+    def movement(self,screen):
+        self.rect.topleft = (self.x,self.y)
+     
         self.y -= self.speed
 
 class Loadout():
     def __init__(self,img_path = "images/loadout.png",gone = False,health = False,rapid_fire = False,launcher = False):
+        
         self.image = pygame.image.load(img_path).convert_alpha()
+        self.rect = self.image.get_rect()
         self.speed = 2
         self.x = random.randint(0,360)
         self.y = -30
@@ -81,14 +89,12 @@ class Loadout():
 
 
     def image_blit(self,screen):
+
         screen.blit(self.image, (self.x,self.y))
 
-    def detection(self,playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected):
+    def detection(self,player_rect,playerhealth,playerhealth2,player2_rect,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected):
         
-        if (self.x < playerx + 50 and 
-            self.x + 40 > playerx and
-            self.y < playery + 53 and  
-            self.y + 29 > playery):
+        if self.rect.colliderect(player_rect):
              
             playerhealth += 1  
             self.x =random.randint(0,360)
@@ -108,10 +114,7 @@ class Loadout():
                 else:
                     loadout_collected.play()
 
-        if (self.x < playerx2 + 50 and 
-            self.x + 40 > playerx2 and
-            self.y < playery2 + 53 and  
-            self.y + 29 > playery2): 
+        if self.rect.colliderect(player2_rect): 
             playerhealth2 += 1  
             self.x =random.randint(0,360)
             self.y = -30
@@ -167,8 +170,11 @@ class Loadout():
     
 
         return playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2
-    def movement(self):
+    def movement(self,screen):
+
         self.y += self.speed
+        self.rect.topleft = (self.x,self.y)
+ 
         if self.y > 700:
             self.gone = True
             
@@ -182,31 +188,14 @@ class Buttons():
         self.purchase_number = purchase_number
     def screenblit(self,screen):
         screen.blit(self.image,(self.rect.x,self.rect.y))
-    def detection(self,game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,playerimage,enemylist,fire_mods):
+    def detection(self,game_status):
         pos = pygame.mouse.get_pos()
         print(pos)
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1:
                 game_status = "ongoing"
-                current_wave = 0
-                player1_points = 0 
-                playerx = 400 // 2
-                playery = 700 - (700 // 4)
-                playerx2 = 400 // 2
-                playery2 = 700 - (700 // 4)
-                lo_collected = 0
-                playerhealth2 = 5
-                playerhealth = 5
-                spaceship_img = "images/spaceship.png"
-                if "rapid_fire" in fire_mods:
-                    fire_mods.remove("rapid_fire")
-                if "launcher" in fire_mods:
-                    fire_mods.remove("launcher")
-                current_fire_mod = "single_fire"
-                for enemy in enemylist:
-                    enemylist.remove(enemy)
-                playerimage = pygame.image.load(spaceship_img).convert_alpha()
-        return game_status, current_wave, player1_points, playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage
+
+        return game_status
     def start_detection(self,game_status):
         pos = pygame.mouse.get_pos()
         

@@ -19,6 +19,7 @@ current_wave = 0
 big_bullet_speed = 2
 final_boss_spawned = False
 final_boss_killed = False
+icon = pygame.image.load("images/icon.png")
 zigzag_enemy = False
 playerhealth2 = 5
 bosses_killed = 0
@@ -221,6 +222,7 @@ font4 = pygame.font.Font('freesansbold.ttf', 20)
 playerhealth1 = pygame.font.Font('freesansbold.ttf', 20)
 highscore1 = pygame.font.Font('freesansbold.ttf', 20)
 waves_passed = pygame.font.Font('freesansbold.ttf', 20)
+pygame.display.set_icon(icon)
 # Color for input box
 color_active = pygame.Color('lightskyblue3')
 color_passive = pygame.Color('chartreuse4')
@@ -271,11 +273,13 @@ playerx2 = x // 2
 playery2 = y - (y // 4)
 
 
+
 # Main loop
 while True:
     # Cooldown and track if window is closed
     current_time = pygame.time.get_ticks()
     current_time_page = pygame.time.get_ticks()
+    
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -325,8 +329,11 @@ while True:
         scroll_y = bg_height
     screen.blit(background, (0, - scroll_y))
     screen.blit(background,(0,bg_height - scroll_y))
-
- 
+    player_rect = playerimage.get_rect()
+    player2_rect = playerimage2.get_rect()
+    player_rect.topleft = (playerx,playery)
+    player2_rect.topleft = (playerx2,playery2)
+    
 
     text2 = font2.render("Points: " + str(player1_points),True,white)
     text4 = font4.render("PlayerTwo health: " + str(playerhealth2),True,white)
@@ -346,10 +353,7 @@ while True:
     #screen.blit(playerimage, (playerx, playery))
     if game_status == "ongoing":
         for enemy in enemylist:
-            if (enemy.x < playerx + 50 and
-                enemy.x + 40 > playerx and  
-                enemy.y < playery + 53 and  
-                enemy.y + 29 > playery):  
+            if enemy.rect.colliderect(player_rect):  
                 playerhealth -= 1
                 if enemy.finalboss == False:
                     enemylist.remove(enemy)
@@ -359,10 +363,7 @@ while True:
                     playerhealth -= 1
             
         for enemy in enemylist:
-            if (enemy.x < playerx2 + 50 and
-                enemy.x + 40 > playerx2 and  
-                enemy.y < playery2 + 53 and  
-                enemy.y + 29 > playery2):  
+            if enemy.rect.colliderect(player2_rect):  
                 playerhealth2 -= 1
                 if enemy.finalboss == False:
                     enemylist.remove(enemy)
@@ -379,16 +380,30 @@ while True:
         playerhealth2 -= 1
 
     if game_status == "loss":
+        current_wave = 0
+        player1_points = 0 
+        playerx = 400 // 2
+        playery = 700 - (700 // 4)
+        playerx2 = 400 // 2
+        playery2 = 700 - (700 // 4)
+        lo_collected = 0
+        playerhealth2 = 5
+        playerhealth = 5
+        spaceship_img = "images/spaceship.png"
+        if "rapid_fire" in fire_mods:
+            fire_mods.remove("rapid_fire")
+        if "launcher" in fire_mods:
+            fire_mods.remove("launcher")
+        current_fire_mod = "single_fire"
+        for enemy in enemylist:
+            enemylist.remove(enemy)
+        playerimage = pygame.image.load(spaceship_img).convert_alpha()
         # Shows "WARZONE DEFEAT" text
         screen.blit(text3, text3_rect) 
         replay = Buttons("images/try_again.png",x // 2 -150, 400)  
         enter_menu = Buttons("images/menu.png", 5, 10) 
         replay.screenblit(screen)
-        game_status,current_wave,player1_points,playerx,playerx2,playery,playery2,lo_collected,current_fire_mod,playerhealth,playerhealth2,spaceship_img,enemylist,playerimage = replay.detection(game_status, current_wave, player1_points
-        , playerx,playerx2,playery,
-        playery2,lo_collected,current_fire_mod,playerhealth
-        ,playerhealth2,spaceship_img,
-        playerimage,enemylist,fire_mods)
+        game_status = replay.detection(game_status)
         game_status = enter_menu.menu_detection(game_status)
         enter_menu.screenblit(screen)
 
@@ -436,7 +451,7 @@ while True:
         for enemy in enemylist:    
             enemy.image_blit(screen)
             if enemy.zigzag == False:
-                enemy.movement()
+                enemy.movement(screen)
             if enemy.zigzag == True:
                 zigzagx,zigzagy = enemy.zigzag_movement()   
             if enemy.y > 700:
@@ -447,7 +462,10 @@ while True:
                     if bullet_chance == 2: 
                         bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
                         enemy_bullets.append(bullet)
+    
     if game_status == "ongoing":    
+        for bullet in bulletlist:
+            bullet.image_blit(screen)
         for enemy_bullet in enemy_bullets:
             enemy_bullet.movement()
             enemy_bullet.image_blit(screen)
@@ -455,18 +473,19 @@ while True:
                 enemy_bullets.remove(enemy_bullet)
         
         for enemy_bullet in enemy_bullets:
-            if playerx <= enemy_bullet.x <= playerx+50 and playery <= enemy_bullet.y <= playery+50:
+            if enemy_bullet.rect.colliderect(player_rect):
                 playerhealth -= 1
                 enemy_bullets.remove(enemy_bullet)
 
         for enemy_bullet in enemy_bullets:
-            if playerx2 <= enemy_bullet.x <= playerx2+50 and playery2 <= enemy_bullet.y <= playery2+50:
+            if enemy_bullet.rect.colliderect(player2_rect):
                 playerhealth2 -= 1
                 enemy_bullets.remove(enemy_bullet)
-    # Deletes bullet after it is out of screen    
+    # Deletes bullet after it is out of screen  
+      
         for bullet in bulletlist:
             bullet.image_blit(screen)
-            bullet.movement()
+            bullet.movement(screen)
             if bullet.y <0:
                 bulletlist.remove(bullet)
                 continue
@@ -477,7 +496,7 @@ while True:
                 else:
                     hitboxx = 200
                     hitboxy =432
-                if enemy.x <= bullet.x <= enemy.x+hitboxx and enemy.y <= bullet.y <= enemy.y+hitboxy:
+                if bullet.rect.colliderect(enemy.rect):
                     bulletlist.remove(bullet)
                     if bullet.big_bullet == True:
                         enemy.enemyhealth -= 5
@@ -529,8 +548,8 @@ while True:
 
     for loadouts in loadout_list:    
         loadouts.image_blit(screen)
-        playerhealth,playerhealth2,lo_collected = loadouts.detection(playerx,playery,playerhealth,playerhealth2,playerx2,playery2,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected)
-        loadoutsrn = loadouts.movement()
+        playerhealth,playerhealth2,lo_collected = loadouts.detection(player_rect,playerhealth,playerhealth2,player2_rect,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected)
+        loadouts.movement(screen)
         if loadouts.gone == True:
             loadout_list.remove(loadouts)
             if loadouts.collected:
