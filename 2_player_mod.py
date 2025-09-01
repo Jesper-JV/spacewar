@@ -135,20 +135,8 @@ while True:
 
 
     # Appending enemys
-    if game_status == "ongoing":
-        if current_time - last_spawn_time > spawn_delay:
-            for i in range(enemyspawns):
-                enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False,False)) 
-                enemyx = enemy.x
-                enemyy = enemy.y
-                enemylist.append(enemy)
-            last_spawn_time = current_time
-            current_wave += 1
-            if current_wave % 10 == 0:
-                enemylist.append(Enemy("images/tmp.png", 5,True,0.5,False,False))
-            if current_wave % 7 == 0 and zigzag_enemy == False:
-                enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
-                zigzag_enemy = True
+
+
 
     playerx,playery = player_movement(playerx,playery,playerstep)
     playerx2,playery2 = player_movement2(playerx2,playery2)
@@ -174,13 +162,9 @@ while True:
     waves_passed_text = waves_passed.render('Current wave: ' + str(current_wave), True,white) 
     waves_passed_text_rect = waves_passed_text.get_rect(center=(82,130))
     # Blits text
-    if game_status == "ongoing":
-        screen.blit(waves_passed_text, waves_passed_text_rect)
-        screen.blit(highscore1, highscore_rect)
-        screen.blit(text2, text2_rect)
-        screen.blit(playerhealth1_text, playerhealth1_text_rect)
-        screen.blit(text4, text4_rect)   
-    #screen.blit(playerimage, (playerx, playery))
+
+   
+  
 
         
             
@@ -254,9 +238,28 @@ while True:
         # Draw player (needed so it still shows when no keys pressed)
         screen.blit(playerimage, (playerx, playery)) 
         screen.blit(playerimage2, (playerx2, playery2))
+        # Blit text
+        screen.blit(waves_passed_text, waves_passed_text_rect)
+        screen.blit(highscore1, highscore_rect)
+        screen.blit(text2, text2_rect)
+        screen.blit(playerhealth1_text, playerhealth1_text_rect)
+        screen.blit(text4, text4_rect)
         if not final_boss_spawned:
             pygame.mixer.music.fadeout(3000)
-
+        #Append enemies
+        if current_time - last_spawn_time > spawn_delay:
+            for i in range(enemyspawns):
+                enemy = (Enemy(enemyimage, enemyhealth,False,random.choice([2,2.2,2.3,2.4,2.5]),False,False)) 
+                enemyx = enemy.x
+                enemyy = enemy.y
+                enemylist.append(enemy)
+            last_spawn_time = current_time
+            current_wave += 1
+            if current_wave % 10 == 0:
+                enemylist.append(Enemy("images/tmp.png", 5,True,0.5,False,False))
+            if current_wave % 7 == 0 and zigzag_enemy == False:
+                enemylist.append(Enemy("images/enemy_blue.png", 10,False,2,False,True))
+                zigzag_enemy = True
         for enemy_bullet in enemy_bullets:
             enemy_bullet.movement()
             enemy_bullet.image_blit(screen)
