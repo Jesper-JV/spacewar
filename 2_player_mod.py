@@ -5,7 +5,7 @@ import pdb
 from library import Enemy_bullet, Enemy, Loadout, Buttons, Text
 from library import player_movement2, player_movement, update_highscore, save_coins, enemy_difficulty, finalboss_spawn, shoot_bullets, fire_mod_change
 import json
-
+pygame.init()
 loadoutx = random.randint(0,380)
 loadouty = -30
 playercenter = 24
@@ -43,7 +43,6 @@ x = 400 # width of the frame
 y = 700 # height of the frame
 last_shot_time = 0 # last
 last_shot_time2 = 0
-
 cooldown = 400 # cooldown between bullets
 cooldown2 = 1500
 boss_spawned = False # spawns boss once
@@ -51,7 +50,6 @@ sound_played = False # plays sound once
 spawn_delay = 2000  # time in milliseconds between spawns
 last_spawn_time = pygame.time.get_ticks()  # current time
 last_change_time = pygame.time.get_ticks()
-
 page_cooldown = 400
 # Lists
 bulletlist = []
@@ -62,14 +60,6 @@ spaceships = []
 fire_mods = ["single_fire"]
 mod = 0
 current_fire_mod = fire_mods[mod]
-
-
-
-  
-                
-           
-pygame.init()
-
 # Create frame
 screen = pygame.display.set_mode((x, y))
 # Set caption
@@ -106,7 +96,6 @@ space = Text(100,"SPACE",green,200,100,'comicsansms')
 war = Text(65,"WAR",green,200,180,'comicsansms')
 total_coins = Text(30,"Coins: "+str(dictionary_highscore["coins"]),yellow,340,30)
 background = pygame.image.load("images/bg.jpg").convert()
-
 bg_height = background.get_height()
 scroll_y = 0
 playerimage = pygame.image.load(spaceship_img).convert_alpha()
@@ -121,9 +110,7 @@ loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
 loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
 rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
-
 launcher = pygame.mixer.Sound("sounds/launcher.wav")
-
 pygame.mixer.music.load("sounds/menu_sound.mp3")
 pygame.mixer.music.set_volume(0.4)
 quit_shop = Buttons("images/quit_button.png",10, 10)
@@ -133,9 +120,6 @@ playerx = x // 2
 playery = y - (y // 4)
 playerx2 = x // 2
 playery2 = y - (y // 4)
-
-
-
 # Main loop
 while True:
     # Cooldown and track if window is closed
@@ -197,26 +181,8 @@ while True:
         screen.blit(playerhealth1_text, playerhealth1_text_rect)
         screen.blit(text4, text4_rect)   
     #screen.blit(playerimage, (playerx, playery))
-    if game_status == "ongoing":
-        for enemy in enemylist:
-            if enemy.rect.colliderect(player_rect):  
-                playerhealth -= 1
-                if enemy.finalboss == False:
-                    enemylist.remove(enemy)
-                if enemy.zigzag:
-                    playerhealth -= 2
-                if enemy.bulletenemy:
-                    playerhealth -= 1
-            
-        for enemy in enemylist:
-            if enemy.rect.colliderect(player2_rect):  
-                playerhealth2 -= 1
-                if enemy.finalboss == False:
-                    enemylist.remove(enemy)
-                if enemy.zigzag:
-                    playerhealth -= 2
-                if enemy.bulletenemy:
-                    playerhealth -= 1          
+
+        
             
     if playerhealth == 0 or playerhealth2 == 0:
         game_status = "loss"
@@ -254,13 +220,8 @@ while True:
         game_status = enter_menu.menu_detection(game_status)
         enter_menu.screenblit(screen)
 
-    if game_status == "ongoing":
-        # Draw player (needed so it still shows when no keys pressed)
-        screen.blit(playerimage, (playerx, playery)) 
-        screen.blit(playerimage2, (playerx2, playery2))
-        if not final_boss_spawned:
 
-            pygame.mixer.music.fadeout(3000)
+
     if game_status == "win":
         pygame.mixer.music.stop()
         screen.blit(text1, text1_rect)
@@ -288,14 +249,43 @@ while True:
         shop_page = change_page.change_page(shop_page)
         save_coins(dictionary_highscore)
       
-
-
-                    
-               
-        
     # Update enemy
     if game_status == "ongoing":
-        for enemy in enemylist:    
+        # Draw player (needed so it still shows when no keys pressed)
+        screen.blit(playerimage, (playerx, playery)) 
+        screen.blit(playerimage2, (playerx2, playery2))
+        if not final_boss_spawned:
+            pygame.mixer.music.fadeout(3000)
+
+        for enemy_bullet in enemy_bullets:
+            enemy_bullet.movement()
+            enemy_bullet.image_blit(screen)
+            if enemy_bullet.y > 700:
+                enemy_bullets.remove(enemy_bullet)
+            if enemy_bullet.rect.colliderect(player_rect):
+                playerhealth -= 1
+                enemy_bullets.remove(enemy_bullet)
+            if enemy_bullet.rect.colliderect(player2_rect):
+                playerhealth2 -= 1
+                enemy_bullets.remove(enemy_bullet)
+    # Deletes bullet after it is out of screen     
+        for enemy in enemylist:
+            if enemy.rect.colliderect(player_rect):  
+                playerhealth -= 1
+                if enemy.finalboss == False:
+                    enemylist.remove(enemy)
+                if enemy.zigzag:
+                    playerhealth -= 2
+                if enemy.bulletenemy:
+                    playerhealth -= 1
+            if enemy.rect.colliderect(player2_rect):  
+                playerhealth2 -= 1
+                if enemy.finalboss == False:
+                    enemylist.remove(enemy)
+                if enemy.zigzag:
+                    playerhealth -= 2
+                if enemy.bulletenemy:
+                    playerhealth -= 1  
             enemy.image_blit(screen)
             if enemy.zigzag == False:
                 enemy.movement(screen)
@@ -309,27 +299,7 @@ while True:
                     if bullet_chance == 2: 
                         bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
                         enemy_bullets.append(bullet)
-    
-    if game_status == "ongoing":    
-        for bullet in bulletlist:
-            bullet.image_blit(screen)
-        for enemy_bullet in enemy_bullets:
-            enemy_bullet.movement()
-            enemy_bullet.image_blit(screen)
-            if enemy_bullet.y > 700:
-                enemy_bullets.remove(enemy_bullet)
-        
-        for enemy_bullet in enemy_bullets:
-            if enemy_bullet.rect.colliderect(player_rect):
-                playerhealth -= 1
-                enemy_bullets.remove(enemy_bullet)
 
-        for enemy_bullet in enemy_bullets:
-            if enemy_bullet.rect.colliderect(player2_rect):
-                playerhealth2 -= 1
-                enemy_bullets.remove(enemy_bullet)
-    # Deletes bullet after it is out of screen  
-      
         for bullet in bulletlist:
             bullet.image_blit(screen)
             bullet.movement()
@@ -363,7 +333,8 @@ while True:
                             hitboxx = 200
                             hitboxy = 432   
                         if enemy.zigzag == True:
-                            zigzag_enemy = False                 
+                            zigzag_enemy = False 
+                            #make sure to add baby enemys here!!!                
                         else:
                             explosion_sound.play()
                             player1_points += 1
