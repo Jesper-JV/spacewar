@@ -68,7 +68,7 @@ class Bullet():
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
 
-    def movement(self,screen):
+    def movement(self):
         self.rect.topleft = (self.x,self.y)
      
         self.y -= self.speed
@@ -355,7 +355,6 @@ def finalboss_spawn(hitboxx,hitboxy,final_boss_spawned,player1_points,enemylist)
         pygame.mixer.music.play()
     return hitboxx,hitboxy,final_boss_spawned
 
-
 def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage,event,bulletlist):
     if event.type == pygame.KEYDOWN:
         if current_time - last_shot_time >= cooldown:
@@ -399,3 +398,15 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                 last_shot_time2 = current_time
     return bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2
 
+def fire_mod_change(event,mod,fire_mods,current_fire_mod):
+    fire_mod_change = pygame.mixer.Sound("sounds/fire_mod_change.wav")
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_m:
+            fire_mod_change.play()
+            mod += 1
+            
+            if mod >= len(fire_mods):
+                mod = 0
+            current_fire_mod = fire_mods[mod]
+            print(current_fire_mod)
+    return mod,fire_mods,current_fire_mod

@@ -2,7 +2,8 @@ import pygame
 import random
 import sys
 import pdb
-from library import Enemy_bullet, Enemy, Bullet, Loadout, Buttons, Text, player_movement2, player_movement, update_highscore, save_coins, enemy_difficulty, finalboss_spawn, shoot_bullets
+from library import Enemy_bullet, Enemy, Loadout, Buttons, Text
+from library import player_movement2, player_movement, update_highscore, save_coins, enemy_difficulty, finalboss_spawn, shoot_bullets, fire_mod_change
 import json
 
 loadoutx = random.randint(0,380)
@@ -120,7 +121,7 @@ loadout_collected = pygame.mixer.Sound("sounds/loadout_collect.wav")
 loadout_inbound = pygame.mixer.Sound("sounds/loadoutinbound.wav")
 health_lo_collected = pygame.mixer.Sound("sounds/healing_lo.wav")
 rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
-fire_mod_change = pygame.mixer.Sound("sounds/fire_mod_change.wav")
+
 launcher = pygame.mixer.Sound("sounds/launcher.wav")
 
 pygame.mixer.music.load("sounds/menu_sound.mp3")
@@ -145,17 +146,8 @@ while True:
             pygame.quit()
             sys.exit()
         if game_status == "ongoing":
-
             bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage,event,bulletlist)
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_m:
-                fire_mod_change.play()
-                mod += 1
-                
-                if mod >= len(fire_mods):
-                    mod = 0
-                current_fire_mod = fire_mods[mod]
-                print(current_fire_mod)
+            mod,fire_mods,current_fire_mod = fire_mod_change(event,mod,fire_mods,current_fire_mod)
 
 
     # Appending enemys
@@ -340,7 +332,7 @@ while True:
       
         for bullet in bulletlist:
             bullet.image_blit(screen)
-            bullet.movement(screen)
+            bullet.movement()
             if bullet.y <0:
                 bulletlist.remove(bullet)
                 continue
