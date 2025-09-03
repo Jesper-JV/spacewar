@@ -41,12 +41,12 @@ class Enemy():
     # Refreshes enemies image and position every frame    
     def image_blit(self,screen):
         screen.blit(self.image, (self.x,self.y))
-    def movement(self,screen):
-        self.rect.topleft = (self.x,self.y)   
+        
+    def movement(self):
+        self.rect.topleft = (self.x,self.y)
     
         self.y += self.steps
     def zigzag_movement(self):
-        
         if self.x > 360:
             self.steps = self.steps *(-1)
             self.y += 40
@@ -54,6 +54,7 @@ class Enemy():
             self.steps = self.steps *(-1)
             self.y += 40
         self.x += self.steps
+        self.rect.topleft = (self.x,self.y)
         return self.x, self.y
     
 class Bullet():
@@ -144,26 +145,24 @@ class Loadout():
                 playerhealth2 += 2
         return playerhealth,playerhealth2,lo_collected
     
-    def loadout_rewards(self,big_bullet_speed,playerstep,cooldown,cooldown2,lo_collected):
+    def loadout_rewards(self,playerstep,cooldown,cooldown2,lo_collected):
         
         spaceship_img = "images/spaceship_upg1.png"
         playerimage = pygame.image.load(spaceship_img).convert_alpha()
         playercenter = 48
         cooldown = 325
-        big_bullet_speed = 5
         if lo_collected >= 2:
             cooldown = 200
-            big_bullet_speed = 6
         if lo_collected == 3:
-            playerstep = 7
+            playerstep = 6
             cooldown = 200
 
         if 5 > lo_collected >= 4:
-            playerstep = 9
+            playerstep = 7
             cooldown = 0
     
         if lo_collected >= 5:
-            playerstep = 10
+            playerstep = 8
             cooldown = 0
 
             
@@ -171,7 +170,7 @@ class Loadout():
             
     
 
-        return playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2
+        return playerimage,playercenter,cooldown,playerstep,cooldown2
     def movement(self,screen):
 
         self.y += self.speed
@@ -192,7 +191,6 @@ class Buttons():
         screen.blit(self.image,(self.rect.x,self.rect.y))
     def detection(self,game_status):
         pos = pygame.mouse.get_pos()
-        print(pos)
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1:
                 game_status = "ongoing"
@@ -211,43 +209,8 @@ class Buttons():
             if pygame.mouse.get_pressed()[0] == 1:
                 game_status = "menu"   
         return game_status
-    def shop_detection(self,game_status,shop_page):
-        pos = pygame.mouse.get_pos() 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "shop" 
-                shop_page = 1  
-        return game_status,shop_page
 
-    def buy_items(self,spaceship_list,coins):
-        pos = pygame.mouse.get_pos() 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                if self.purchase_number == 1 and coins >= 50:
-                    spaceship_list.append("images/spaceship_num1")
-                    coins -= 50
-                if self.purchase_number == 2 and coins >= 100:
-                    spaceship_list.append("images/spaceship_num2")
-                    coins -= 100
-                if self.purchase_number == 3 and coins >= 150:
-                    spaceship_list.append("images/spaceship_num3")
-                    coins -= 150
-    def change_page(self,page):
-        
-        pos = pygame.mouse.get_pos() 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1: 
-                if page == 1:  
-                    page = 2
-                elif page == 2:  
-                    page = 3
-                elif page == 3:  
-                    page = 4
-                elif page == 4:  
-                    page = 1
-                print(page)
-            
-        return page
+
                 
 class Text():
     def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
@@ -355,7 +318,7 @@ def finalboss_spawn(hitboxx,hitboxy,final_boss_spawned,player1_points,enemylist)
         pygame.mixer.music.play()
     return hitboxx,hitboxy,final_boss_spawned
 
-def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage,event,bulletlist):
+def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,last_shot_time2,cooldown2,bullet_damage,event,bulletlist):
     if event.type == pygame.KEYDOWN:
         if current_time - last_shot_time >= cooldown:
             if current_fire_mod == "single_fire":
@@ -378,7 +341,7 @@ def shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_so
                     launcher.play()
                     last_shot_time = current_time
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_SPACE] and not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
         if current_fire_mod == "rapid_fire":
             bullet_damage = 1
             cooldown = 200

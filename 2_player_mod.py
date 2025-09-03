@@ -14,20 +14,16 @@ coins = 0
 playerstep = 5
 enemyspawns = 2
 enemyhealth = 2
-shop_page = 1
 playerhealth = 5
 current_wave = 0
-big_bullet_speed = 2
 final_boss_spawned = False
 final_boss_killed = False
 icon = pygame.image.load("images/icon.png")
 zigzag_enemy = False
 playerhealth2 = 5
-bosses_killed = 0
 bullet_damage = 1
 enemyimage = "images/enemy_green.png"
 loadout_inbound_sound = False
-active = False
 hitboxx = 40 
 game_status = "menu" 
 spaceship_img = "images/spaceship.png" # player image
@@ -41,11 +37,10 @@ red = (255,0,0) # color code for red
 yellow = (255,215,0)
 x = 400 # width of the frame
 y = 700 # height of the frame
-last_shot_time = 0 # last
+last_shot_time = 0 
 last_shot_time2 = 0
 cooldown = 400 # cooldown between bullets
 cooldown2 = 1500
-boss_spawned = False # spawns boss once
 sound_played = False # plays sound once
 spawn_delay = 2000  # time in milliseconds between spawns
 last_spawn_time = pygame.time.get_ticks()  # current time
@@ -130,16 +125,10 @@ while True:
             pygame.quit()
             sys.exit()
         if game_status == "ongoing":
-            bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,big_bullet_speed,last_shot_time2,cooldown2,bullet_damage,event,bulletlist)
+            bullet_damage,current_fire_mod,cooldown,cooldown2,playerx,playerx2,playery,playery2,bulletlist,current_time,last_shot_time,last_shot_time2 = shoot_bullets(last_shot_time,cooldown,current_time,current_fire_mod,shoot_sound,playercenter,playerx,playery,launcher,playerx2,playery2,last_shot_time2,cooldown2,bullet_damage,event,bulletlist)
             mod,fire_mods,current_fire_mod = fire_mod_change(event,mod,fire_mods,current_fire_mod)
 
 
-    # Appending enemys
-
-
-
-    playerx,playery = player_movement(playerx,playery,playerstep)
-    playerx2,playery2 = player_movement2(playerx2,playery2)
 
     # Draw background
     scroll_y -= 1
@@ -161,20 +150,9 @@ while True:
     playerhealth1_text_rect = playerhealth1_text.get_rect(center=(300,130))
     waves_passed_text = waves_passed.render('Current wave: ' + str(current_wave), True,white) 
     waves_passed_text_rect = waves_passed_text.get_rect(center=(82,130))
-    # Blits text
 
-   
-  
 
-        
-            
-    if playerhealth == 0 or playerhealth2 == 0:
-        game_status = "loss"
-        dictionary_highscore = update_highscore(player1_points,coins,dictionary_highscore)
-        lose_sound.play()
-        playerhealth -= 1
-        playerhealth2 -= 1
-
+    # Loss
     if game_status == "loss":
         current_wave = 0
         player1_points = 0 
@@ -203,27 +181,25 @@ while True:
         game_status = replay.detection(game_status)
         game_status = enter_menu.menu_detection(game_status)
         enter_menu.screenblit(screen)
-
-
-
+    # Win
     if game_status == "win":
         pygame.mixer.music.stop()
         screen.blit(text1, text1_rect)
+        save_coins(dictionary_highscore)
+    # Menu
     if game_status == "menu":
         space.image_blit(screen)
         war.image_blit(screen)
         start_game = Buttons("images/play.png",x // 2 -100, 300)
         enter_shop = Buttons("images/shop.png",x // 2 -100, 400)
         game_status = start_game.start_detection(game_status)
-        game_status,shop_page = enter_shop.shop_detection(game_status,shop_page)
+
         start_game.screenblit(screen)
         enter_shop.screenblit(screen)
         if not pygame.mixer.music.get_busy():
             pygame.mixer.music.play(-1)
-     
-    
-    if game_status == "shop":
-        
+    # Shop  
+    if game_status == "shop":    
         screen.blit(shop,(0,0))
         change_page.screenblit(screen)
         game_status = quit_shop.menu_detection(game_status)
@@ -232,9 +208,16 @@ while True:
         total_coins.refresh_text("Coins: "+str(dictionary_highscore["coins"]),yellow)
         shop_page = change_page.change_page(shop_page)
         save_coins(dictionary_highscore)
-      
-    # Update enemy
+    # Ongoing
     if game_status == "ongoing":
+        playerx,playery = player_movement(playerx,playery,playerstep)
+        playerx2,playery2 = player_movement2(playerx2,playery2)
+        if playerhealth == 0 or playerhealth2 == 0:
+            game_status = "loss"
+            dictionary_highscore = update_highscore(player1_points,coins,dictionary_highscore)
+            lose_sound.play()
+            playerhealth -= 1
+            playerhealth2 -= 1
         # Draw player (needed so it still shows when no keys pressed)
         screen.blit(playerimage, (playerx, playery)) 
         screen.blit(playerimage2, (playerx2, playery2))
@@ -270,13 +253,13 @@ while True:
                 enemy_bullets.remove(enemy_bullet)
             if enemy_bullet.rect.colliderect(player2_rect):
                 playerhealth2 -= 1
-                enemy_bullets.remove(enemy_bullet)
-    # Deletes bullet after it is out of screen     
+                enemy_bullets.remove(enemy_bullet)   
         for enemy in enemylist:
             if enemy.rect.colliderect(player_rect):  
                 playerhealth -= 1
                 if enemy.finalboss == False:
                     enemylist.remove(enemy)
+                    continue
                 if enemy.zigzag:
                     playerhealth -= 2
                 if enemy.bulletenemy:
@@ -285,13 +268,14 @@ while True:
                 playerhealth2 -= 1
                 if enemy.finalboss == False:
                     enemylist.remove(enemy)
+                    continue
                 if enemy.zigzag:
                     playerhealth -= 2
                 if enemy.bulletenemy:
                     playerhealth -= 1  
             enemy.image_blit(screen)
             if enemy.zigzag == False:
-                enemy.movement(screen)
+                enemy.movement()
             if enemy.zigzag == True:
                 zigzagx,zigzagy = enemy.zigzag_movement()   
             if enemy.y > 700:
@@ -302,7 +286,6 @@ while True:
                     if bullet_chance == 2: 
                         bullet = Enemy_bullet(enemy.x + 15, enemy.y + 15)
                         enemy_bullets.append(bullet)
-
         for bullet in bulletlist:
             bullet.image_blit(screen)
             bullet.movement()
@@ -347,41 +330,38 @@ while True:
                                 loadout = Loadout("images/loadout.png")
                                 loadout_list.append(loadout)
                                 loadout_inbound.play()
-                                        
-                                lo_spawn = 8
                             if lo_spawn == 10 and len(loadout_list) == 0:
                                 loadout_list.append(Loadout("images/loadout_heart.png",False,True))
                                 loadout_inbound.play()
                             if lo_spawn == 5 and not loadout_list:
                                 loadout_list.append(Loadout("images/fire_mods.png",False,False,True))
-                                loadout_inbound.play()
-                                
+                                loadout_inbound.play()    
                             if lo_spawn == 12 and not loadout_list:
                                 loadout_list.append(Loadout("images/launcher.png",False,False,False,True))
                                 loadout_inbound.play()                            
                     break
     
-    hitboxx,hitboxy,final_boss_spawned = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned,player1_points,enemylist)
+        hitboxx,hitboxy,final_boss_spawned = finalboss_spawn(hitboxx,hitboxy,final_boss_spawned,player1_points,enemylist)
  
-    if final_boss_killed == True:
-        game_status = "win"
-    enemyspawns,spawn_delay,enemyimage,enemyhealth = enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyhealth)
+        if final_boss_killed == True:
+            game_status = "win"
+        enemyspawns,spawn_delay,enemyimage,enemyhealth = enemy_difficulty(player1_points,enemyspawns,enemyimage,spawn_delay,enemyhealth)
 
-    for loadouts in loadout_list:    
-        loadouts.image_blit(screen)
-        playerhealth,playerhealth2,lo_collected = loadouts.detection(player_rect,playerhealth,playerhealth2,player2_rect,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected)
-        loadouts.movement(screen)
-        if loadouts.gone == True:
-            loadout_list.remove(loadouts)
-            if loadouts.collected:
-                if lo_collected >= 1:
-                    playerimage,playercenter,cooldown,playerstep,big_bullet_speed,cooldown2 = loadouts.loadout_rewards(big_bullet_speed,playerstep,cooldown,cooldown2,lo_collected)
-                if loadouts.rapid_fire:
-                    if not "rapid_fire" in fire_mods:
-                        fire_mods.append("rapid_fire")
-                if loadouts.launcher:
-                    if not "launcher" in fire_mods:
-                        fire_mods.append("launcher")         
+        for loadouts in loadout_list:    
+            loadouts.image_blit(screen)
+            playerhealth,playerhealth2,lo_collected = loadouts.detection(player_rect,playerhealth,playerhealth2,player2_rect,health_lo_collected,rapid_fire_collected,loadout_collected,lo_collected)
+            loadouts.movement(screen)
+            if loadouts.gone == True:
+                loadout_list.remove(loadouts)
+                if loadouts.collected:
+                    if lo_collected >= 1:
+                        playerimage,playercenter,cooldown,playerstep,cooldown2 = loadouts.loadout_rewards(playerstep,cooldown,cooldown2,lo_collected)
+                    if loadouts.rapid_fire:
+                        if not "rapid_fire" in fire_mods:
+                            fire_mods.append("rapid_fire")
+                    if loadouts.launcher:
+                        if not "launcher" in fire_mods:
+                            fire_mods.append("launcher")         
 
 
     pygame.display.flip()
