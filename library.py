@@ -180,13 +180,13 @@ class Loadout():
             self.gone = True
             
 class Buttons():
-    def __init__(self,img,x,y,purchase_number = 9999):
+    def __init__(self,img,x,y):
         self.image = pygame.image.load(img).convert_alpha()
         self.x = x
         self.y = y
         self.rect = self.image.get_rect()
         self.rect.topleft = (x,y)
-        self.purchase_number = purchase_number
+        self.page_changed = False
     def screenblit(self,screen):
         screen.blit(self.image,(self.rect.x,self.rect.y))
     def detection(self,game_status):
@@ -209,9 +209,55 @@ class Buttons():
             if pygame.mouse.get_pressed()[0] == 1:
                 game_status = "menu"   
         return game_status
-
-
+    def shop_detection(self,game_status):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                game_status = "shop"   
+        return game_status
+    def shop_change_detection(self,shop_page):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1 and self.page_changed == False:
+                shop_page += 1
+                self.page_changed = True  
                 
+                if shop_page > 4:
+                    shop_page = 1
+                print(shop_page)
+        if pygame.mouse.get_pressed()[0] == 0: 
+                self.page_changed = False
+        return shop_page
+    def buy_stuff(self,shop_page,coins,spaceship_list):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                if shop_page == 1:
+                    cost = 50
+                    if coins >= cost and "images/panda.webp" not in spaceship_list:
+                        coins -= cost
+                        spaceship_list.append("images/panda.webp")
+                        print("bought")
+                        print(spaceship_list)
+                if shop_page == 2:
+                    cost = 100
+                    if coins >= cost:
+                        coins -= cost
+                if shop_page == 3:
+                    cost = 150
+                    if coins >= cost:
+                        coins -= cost
+                if shop_page == 4:
+                    cost = 200
+                    if coins >= cost:
+                        coins -= cost
+                
+
+                    print(coins)
+                    print(shop_page)
+        return coins
+
+               
 class Text():
     def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
         self.font = pygame.font.SysFont(font,size)
@@ -221,6 +267,24 @@ class Text():
         screen.blit(self.text,self.text_rect)
     def refresh_text(self,text,color):
         self.text = self.font.render(str(text), True,color)
+
+class Shop_items():
+    def __init__(self,img,x,y):
+        self.image = pygame.image.load(img).convert_alpha()
+        self.x = x
+        self.y = y
+    def screen_blit(self,screen):
+        screen.blit(self.image,(self.x,self.x))
+
+def shop_item_blit(shop_page,ship1,ship2,ship3,ship4,screen):
+    if shop_page == 1:
+        ship1.screen_blit(screen)
+    if shop_page == 2:
+        ship2.screen_blit(screen)
+    if shop_page == 3:
+        ship3.screen_blit(screen)
+    if shop_page == 4:
+        ship4.screen_blit(screen)
 
 def player_movement(x,y,playerstep):
     # Handle movement on key press inside event loop
@@ -373,3 +437,5 @@ def fire_mod_change(event,mod,fire_mods,current_fire_mod):
             current_fire_mod = fire_mods[mod]
             print(current_fire_mod)
     return mod,fire_mods,current_fire_mod
+
+

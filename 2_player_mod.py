@@ -2,8 +2,8 @@ import pygame
 import random
 import sys
 import pdb
-from library import Enemy_bullet, Enemy, Loadout, Buttons, Text
-from library import player_movement2, player_movement, update_highscore, save_coins, enemy_difficulty, finalboss_spawn, shoot_bullets, fire_mod_change
+from library import Enemy_bullet, Enemy, Loadout, Buttons, Text, Shop_items
+from library import player_movement2, player_movement, update_highscore, save_coins, enemy_difficulty, finalboss_spawn, shoot_bullets, fire_mod_change, shop_item_blit
 import json
 pygame.init()
 loadoutx = random.randint(0,380)
@@ -16,6 +16,7 @@ enemyspawns = 2
 enemyhealth = 2
 playerhealth = 5
 current_wave = 0
+shop_page = 1
 final_boss_spawned = False
 final_boss_killed = False
 icon = pygame.image.load("images/icon.png")
@@ -108,8 +109,14 @@ rapid_fire_collected = pygame.mixer.Sound("sounds/fire_mods.wav")
 launcher = pygame.mixer.Sound("sounds/launcher.wav")
 pygame.mixer.music.load("sounds/menu_sound.mp3")
 pygame.mixer.music.set_volume(0.4)
+# Append objects
 quit_shop = Buttons("images/quit_button.png",10, 10)
 change_page = Buttons("images/change_page.png",180,665)
+buy_stuff = Buttons("images/panda.webp",40,40)
+plane1 = Shop_items("images/panda.webp",150,150)
+plane2 = Shop_items("images/panda.webp",170,170)
+plane3 = Shop_items("images/panda.webp",150,150)
+plane4 = Shop_items("images/panda.webp",150,150)
 # Initial positions
 playerx = x // 2
 playery = y - (y // 4)
@@ -193,20 +200,24 @@ while True:
         start_game = Buttons("images/play.png",x // 2 -100, 300)
         enter_shop = Buttons("images/shop.png",x // 2 -100, 400)
         game_status = start_game.start_detection(game_status)
-
+        game_status = enter_shop.shop_detection(game_status)
         start_game.screenblit(screen)
         enter_shop.screenblit(screen)
         if not pygame.mixer.music.get_busy():
             pygame.mixer.music.play(-1)
     # Shop  
     if game_status == "shop":    
+
+        dictionary_highscore["coins"] = buy_stuff.buy_stuff(shop_page,dictionary_highscore["coins"],spaceships)
         screen.blit(shop,(0,0))
+        shop_item_blit(shop_page,plane1,plane2,plane3,plane4,screen)
+        buy_stuff.screenblit(screen)
         change_page.screenblit(screen)
+        shop_page = change_page.shop_change_detection(shop_page)
         game_status = quit_shop.menu_detection(game_status)
         quit_shop.screenblit(screen)
         total_coins.image_blit(screen)
         total_coins.refresh_text("Coins: "+str(dictionary_highscore["coins"]),yellow)
-        shop_page = change_page.change_page(shop_page)
         save_coins(dictionary_highscore)
     # Ongoing
     if game_status == "ongoing":
