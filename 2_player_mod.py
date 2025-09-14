@@ -17,6 +17,7 @@ enemyhealth = 2
 playerhealth = 5
 current_wave = 0
 shop_page = 1
+equipped_ship = 0
 final_boss_spawned = False
 final_boss_killed = False
 icon = pygame.image.load("images/icon.png")
@@ -52,8 +53,9 @@ bulletlist = []
 enemylist = []
 enemy_bullets = []
 loadout_list = []
-spaceships = []
+spaceships = ["images/spaceship_upg3.png"]
 fire_mods = ["single_fire"]
+spaceship_img = spaceships[equipped_ship]
 mod = 0
 current_fire_mod = fire_mods[mod]
 # Create frame
@@ -110,12 +112,13 @@ launcher = pygame.mixer.Sound("sounds/launcher.wav")
 pygame.mixer.music.load("sounds/menu_sound.mp3")
 pygame.mixer.music.set_volume(0.4)
 # Append objects
+customize = Buttons("images/customize.png",100,400)
 quit_shop = Buttons("images/quit_button.png",10, 10)
 change_page = Buttons("images/change_page.png",180,665)
-buy_stuff = Buttons("images/panda.webp",40,40)
-plane1 = Shop_items("images/panda.webp",150,150)
+buy_stuff = Buttons("images/panda.webp",180,460)
+plane1 = Shop_items("images/panda.webp",200,200)
 plane2 = Shop_items("images/panda.webp",170,170)
-plane3 = Shop_items("images/panda.webp",150,150)
+plane3 = Shop_items("images/spaceship3_display.png",205,350)
 plane4 = Shop_items("images/panda.webp",150,150)
 # Initial positions
 playerx = x // 2
@@ -171,7 +174,7 @@ while True:
         playerhealth2 = 5
         playerhealth = 5
         playerstep = 5
-        spaceship_img = "images/spaceship.png"
+        spaceship_img = spaceships[0]
         if "rapid_fire" in fire_mods:
             fire_mods.remove("rapid_fire")
         if "launcher" in fire_mods:
@@ -193,13 +196,16 @@ while True:
         pygame.mixer.music.stop()
         screen.blit(text1, text1_rect)
         save_coins(dictionary_highscore)
+    if game_status == "customize":
+        screen.blit(shop,(0,0))
     # Menu
     if game_status == "menu":
+        customize.screenblit(screen)
         space.image_blit(screen)
         war.image_blit(screen)
         start_game = Buttons("images/play.png",x // 2 -100, 300)
-        enter_shop = Buttons("images/shop.png",x // 2 -100, 400)
-        game_status = start_game.start_detection(game_status)
+        enter_shop = Buttons("images/shop.png",200, 20)
+        game_status,spaceship_img,player_image = start_game.start_detection(game_status,spaceships,spaceship_img,equipped_ship,playerimage)
         game_status = enter_shop.shop_detection(game_status)
         start_game.screenblit(screen)
         enter_shop.screenblit(screen)

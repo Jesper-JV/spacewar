@@ -196,13 +196,15 @@ class Buttons():
                 game_status = "ongoing"
 
         return game_status
-    def start_detection(self,game_status):
+    def start_detection(self,game_status,spaceships,spaceship_img,equipped_ship,playerimage):
         pos = pygame.mouse.get_pos()
         
         if self.rect.collidepoint(pos):  
             if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "ongoing"   
-        return game_status 
+                game_status = "ongoing" 
+                spaceship_img = spaceships[equipped_ship]  
+                playerimage = pygame.image.load(spaceship_img).convert_alpha()
+        return game_status,spaceship_img,playerimage
     def menu_detection(self,game_status):
         pos = pygame.mouse.get_pos() 
         if self.rect.collidepoint(pos):
@@ -241,23 +243,32 @@ class Buttons():
                         print(spaceship_list)
                 if shop_page == 2:
                     cost = 100
-                    if coins >= cost:
+                    if coins >= cost and "images/panda.webp" not in spaceship_list:
                         coins -= cost
+                        spaceship_list.append("images/panda.webp")
+                        print("bought")
+                        print(spaceship_list)
                 if shop_page == 3:
                     cost = 150
-                    if coins >= cost:
+                    if coins >= cost and "images/spaceship_upg3.png" not in spaceship_list:
                         coins -= cost
+                        spaceship_list.append("images/spaceship_upg3.png")
+                        print("bought")
+                        print(spaceship_list)
                 if shop_page == 4:
                     cost = 200
-                    if coins >= cost:
+                    if coins >= cost and "images/panda.webp" not in spaceship_list:
                         coins -= cost
-                
-
-                    print(coins)
-                    print(shop_page)
-        return coins
-
-               
+                        spaceship_list.append("images/panda.webp")
+                        print("bought")
+                        print(spaceship_list)
+        return coins         
+    def shop_detection(self,game_status):
+        pos = pygame.mouse.get_pos() 
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                game_status = "customize"   
+        return game_status
 class Text():
     def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
         self.font = pygame.font.SysFont(font,size)
@@ -271,10 +282,10 @@ class Text():
 class Shop_items():
     def __init__(self,img,x,y):
         self.image = pygame.image.load(img).convert_alpha()
-        self.x = x
-        self.y = y
+        self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
     def screen_blit(self,screen):
-        screen.blit(self.image,(self.x,self.x))
+        screen.blit(self.image,self.rect)
 
 def shop_item_blit(shop_page,ship1,ship2,ship3,ship4,screen):
     if shop_page == 1:
