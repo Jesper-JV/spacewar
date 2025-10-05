@@ -53,7 +53,7 @@ bulletlist = []
 enemylist = []
 enemy_bullets = []
 loadout_list = []
-spaceships = ["images/spaceship_upg3.png"]
+spaceships = ["images/spaceship.png"]
 fire_mods = ["single_fire"]
 spaceship_img = spaceships[equipped_ship]
 mod = 0
@@ -112,10 +112,12 @@ launcher = pygame.mixer.Sound("sounds/launcher.wav")
 pygame.mixer.music.load("sounds/menu_sound.mp3")
 pygame.mixer.music.set_volume(0.4)
 # Append objects
+start_game = Buttons("images/play.png",x // 2 -100, 300)
+enter_shop = Buttons("images/shop.png",200, 300)
 customize = Buttons("images/customize.png",100,400)
 quit_shop = Buttons("images/quit_button.png",10, 10)
 change_page = Buttons("images/change_page.png",180,665)
-buy_stuff = Buttons("images/panda.webp",180,460)
+buy_stuff = Buttons("images/buy.png",113,430)
 plane1 = Shop_items("images/panda.webp",200,200)
 plane2 = Shop_items("images/panda.webp",170,170)
 plane3 = Shop_items("images/spaceship3_display.png",205,350)
@@ -188,32 +190,35 @@ while True:
         replay = Buttons("images/try_again.png",x // 2 -150, 400)  
         enter_menu = Buttons("images/menu.png", 5, 10) 
         replay.screenblit(screen)
-        game_status = replay.detection(game_status)
-        game_status = enter_menu.menu_detection(game_status)
+        game_status = replay.change_game_status(game_status,"ongoing")
+        game_status = enter_menu.change_game_status(game_status,"menu")
         enter_menu.screenblit(screen)
     # Win
-    if game_status == "win":
+    elif game_status == "win":
         pygame.mixer.music.stop()
         screen.blit(text1, text1_rect)
         save_coins(dictionary_highscore)
-    if game_status == "customize":
-        screen.blit(shop,(0,0))
+    
     # Menu
-    if game_status == "menu":
-        customize.screenblit(screen)
+    elif game_status == "menu":
         space.image_blit(screen)
         war.image_blit(screen)
-        start_game = Buttons("images/play.png",x // 2 -100, 300)
-        enter_shop = Buttons("images/shop.png",200, 20)
         game_status,spaceship_img,player_image = start_game.start_detection(game_status,spaceships,spaceship_img,equipped_ship,playerimage)
-        game_status = enter_shop.shop_detection(game_status)
+        game_status = enter_shop.change_game_status(game_status,"shop")
+        game_status = customize.change_game_status(game_status,"customize")
         start_game.screenblit(screen)
         enter_shop.screenblit(screen)
+        customize.screenblit(screen)
         if not pygame.mixer.music.get_busy():
             pygame.mixer.music.play(-1)
-    # Shop  
-    if game_status == "shop":    
 
+    elif game_status == "customize":
+        screen.blit(shop,(0,0))
+        screen.blit(pygame.image.load(spaceships[equipped_ship]).convert_alpha(),(100,100))
+
+
+    # Shop  
+    elif game_status == "shop": 
         dictionary_highscore["coins"] = buy_stuff.buy_stuff(shop_page,dictionary_highscore["coins"],spaceships)
         screen.blit(shop,(0,0))
         shop_item_blit(shop_page,plane1,plane2,plane3,plane4,screen)
@@ -226,7 +231,7 @@ while True:
         total_coins.refresh_text("Coins: "+str(dictionary_highscore["coins"]),yellow)
         save_coins(dictionary_highscore)
     # Ongoing
-    if game_status == "ongoing":
+    elif game_status == "ongoing":
         playerx,playery = player_movement(playerx,playery,playerstep)
         playerx2,playery2 = player_movement2(playerx2,playery2)
         if playerhealth == 0 or playerhealth2 == 0:

@@ -189,13 +189,6 @@ class Buttons():
         self.page_changed = False
     def screenblit(self,screen):
         screen.blit(self.image,(self.rect.x,self.rect.y))
-    def detection(self,game_status):
-        pos = pygame.mouse.get_pos()
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "ongoing"
-
-        return game_status
     def start_detection(self,game_status,spaceships,spaceship_img,equipped_ship,playerimage):
         pos = pygame.mouse.get_pos()
         
@@ -205,17 +198,11 @@ class Buttons():
                 spaceship_img = spaceships[equipped_ship]  
                 playerimage = pygame.image.load(spaceship_img).convert_alpha()
         return game_status,spaceship_img,playerimage
-    def menu_detection(self,game_status):
+    def change_game_status(self,game_status,status):
         pos = pygame.mouse.get_pos() 
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "menu"   
-        return game_status
-    def shop_detection(self,game_status):
-        pos = pygame.mouse.get_pos() 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "shop"   
+                game_status = status   
         return game_status
     def shop_change_detection(self,shop_page):
         pos = pygame.mouse.get_pos() 
@@ -263,12 +250,7 @@ class Buttons():
                         print("bought")
                         print(spaceship_list)
         return coins         
-    def shop_detection(self,game_status):
-        pos = pygame.mouse.get_pos() 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                game_status = "customize"   
-        return game_status
+
 class Text():
     def __init__(self,size,text,color,x,y,font='freesansbold.ttf'):
         self.font = pygame.font.SysFont(font,size)
